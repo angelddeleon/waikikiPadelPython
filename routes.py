@@ -187,16 +187,15 @@ def reservar():
     try:
         cancha = Cancha.query.get_or_404(cancha_id)
         
-        # Manejar horas seleccionadas
-        horas_seleccionadas = request.args.getlist('horas_seleccionadas')
-        if isinstance(horas_seleccionadas, str):
-            horas_seleccionadas = [horas_seleccionadas] if horas_seleccionadas else []
+        # Obtener horas seleccionadas desde parámetros GET
+        horas_seleccionadas = request.args.get('horas_seleccionadas', '')
+        horas_seleccionadas = horas_seleccionadas.split(',') if horas_seleccionadas else []
         
-        # Si se pasa una hora por parámetro, agregarla
+        # Si viene una hora por parámetro, agregarla si no existe
         if hora and hora not in horas_seleccionadas:
             horas_seleccionadas.append(hora)
 
-        # Procesar selección/deselección de horas
+        # Procesar selección/deselección si es POST
         if request.method == 'POST':
             hora_seleccionada = request.form.get('hora')
             if hora_seleccionada:
@@ -207,7 +206,7 @@ def reservar():
                 return redirect(url_for('client.reservar', 
                                      cancha=cancha.id, 
                                      fecha=fecha, 
-                                     horas_seleccionadas=horas_seleccionadas))
+                                     horas_seleccionadas=','.join(horas_seleccionadas)))
 
         # Obtener horarios disponibles para la fecha
         horarios = Horario.query.filter_by(
@@ -216,12 +215,13 @@ def reservar():
             estado='disponible'
         ).order_by(Horario.start_time).all()
 
-        # Formatear horarios para la vista
+        # Formatear horarios para la vista (formato 12 horas)
         formatted_horarios = []
         for horario in horarios:
+            formatted_time = horario.start_time.strftime('%I:%M %p').lstrip('0').lower()
             formatted_horarios.append({
-                'start_time': horario.start_time.strftime('%H:%M:%S'),
-                'formatted_time': horario.start_time.strftime('%I:%M %p').lstrip('0').lower()
+                'start_time': horario.start_time.strftime('%H:%M:%S'),  # Guardar en formato 24h
+                'formatted_time': formatted_time  # Mostrar en formato 12h
             })
 
         # Validar fecha
@@ -230,7 +230,7 @@ def reservar():
         if fecha_obj < get_current_date():
             fecha_error = "No se pueden seleccionar fechas anteriores al día actual."
 
-        # Calcular monto total (asegurando que sea float)
+        # Calcular monto total
         monto_total = len(horas_seleccionadas) * float(cancha.price_per_hour)
 
         return render_template('client/reservar.html',
@@ -247,7 +247,6 @@ def reservar():
         flash('Ocurrió un error al cargar la página de reserva', 'error')
         return redirect(url_for('client.principal'))
 
-
 @client_bp.route('/metodospago')
 @login_required
 def metodospago():
@@ -255,7 +254,7 @@ def metodospago():
         cancha_id = request.args.get('cancha')
         fecha = request.args.get('fecha')
         horarios = request.args.get('horarios', '').split(',')
-        monto_total = float(request.args.get('montoTotal', 0))  # Convertir a float aquí
+        monto_total = float(request.args.get('montoTotal', 0))
 
         if not all([cancha_id, fecha, horarios]):
             flash('Faltan parámetros necesarios para el pago', 'error')
@@ -266,15 +265,17 @@ def metodospago():
         # Filtrar horarios vacíos
         horarios = [h for h in horarios if h]
         
-        # Formatear horarios para mostrar
+        # Formatear horarios para mostrar (formato 12 horas)
         horarios_formateados = []
         for hora in horarios:
             hora_inicio = datetime.strptime(hora, '%H:%M:%S').time()
             hora_fin = (datetime.combine(datetime.min, hora_inicio) + timedelta(hours=1)).time()
             
             horarios_formateados.append({
-                'inicio': format_time(hora_inicio),
-                'fin': format_time(hora_fin)
+                'inicio_24h': hora_inicio.strftime('%H:%M:%S'),  # Para guardar en BD
+                'fin_24h': hora_fin.strftime('%H:%M:%S'),        # Para guardar en BD
+                'inicio': hora_inicio.strftime('%I:%M %p').lstrip('0').lower(),  # Para mostrar
+                'fin': hora_fin.strftime('%I:%M %p').lstrip('0').lower()         # Para mostrar
             })
 
         # Métodos de pago disponibles

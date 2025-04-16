@@ -20,6 +20,25 @@ def format_hora(hora_str):
     except:
         return hora_str
 
+@app.template_filter('format_time_12h')
+def format_time_12h(hora_str):
+    try:
+        hora = datetime.strptime(hora_str, '%H:%M:%S').time()
+        return hora.strftime('%I:%M %p').lstrip('0').lower()
+    except:
+        return hora_str
+
+@app.template_filter('format_date')
+def format_date(date_str, format='%Y-%m-%d'):
+    try:
+        if isinstance(date_str, str):
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        else:
+            date_obj = date_str
+        return date_obj.strftime(format)
+    except:
+        return date_str
+
 app.config.from_object(Config)
 
 # Inicializar la instancia de SQLAlchemy

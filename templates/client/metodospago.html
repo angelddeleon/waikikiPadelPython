@@ -31,7 +31,7 @@
                 <form method="POST" action="{{ url_for('client.procesar_reserva') }}" enctype="multipart/form-data">
                     <input type="hidden" name="cancha_id" value="{{ cancha.id }}">
                     <input type="hidden" name="fecha" value="{{ fecha }}">
-                    <input type="hidden" name="horarios" value="{{ horarios|map(attribute='inicio')|join(',') }}">
+                    <input type="hidden" name="horarios" value="{{ horarios|map(attribute='inicio_24h')|join(',') }}">
                     <input type="hidden" name="monto_total" value="{{ monto_total }}">
                     
                     {% for metodo, detalles in metodos_pago.items() %}

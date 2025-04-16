@@ -5,9 +5,21 @@ from config import Config
 from routes import client_bp, auth_bp
 from models import db, Usuario, Pago, Reservacion, Horario, Cancha, Clase
 from functools import wraps
+from datetime import datetime
+
 
 # Inicializar la aplicación Flask
 app = Flask(__name__)
+
+# Añade este filtro personalizado
+@app.template_filter('format_hora')
+def format_hora(hora_str):
+    try:
+        hora = datetime.strptime(hora_str, '%H:%M:%S').time()
+        return hora.strftime('%I:%M %p').lstrip('0').lower()
+    except:
+        return hora_str
+
 app.config.from_object(Config)
 
 # Inicializar la instancia de SQLAlchemy

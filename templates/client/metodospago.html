@@ -1,0 +1,84 @@
+{% extends "client/base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-6 bg-blue-50 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-blue-900">Confirmar Reserva</h1>
+        </div>
+
+        <div class="p-6">
+            <!-- Detalles de la reserva -->
+            <div class="mb-6">
+                <h2 class="text-xl font-bold">{{ cancha.name }}</h2>
+                <p class="text-gray-600">Fecha: {{ fecha }}</p>
+            </div>
+
+            <!-- Horarios -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3">Horarios seleccionados:</h3>
+                {% for horario in horarios %}
+                    <div class="flex justify-between mb-2">
+                        <span>{{ horario.inicio }} - {{ horario.fin }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Métodos de pago -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3">Método de Pago</h3>
+                
+                <form method="POST" action="{{ url_for('client.procesar_reserva') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="cancha_id" value="{{ cancha.id }}">
+                    <input type="hidden" name="fecha" value="{{ fecha }}">
+                    <input type="hidden" name="horarios" value="{{ horarios|map(attribute='inicio')|join(',') }}">
+                    <input type="hidden" name="monto_total" value="{{ monto_total }}">
+                    
+                    {% for metodo, detalles in metodos_pago.items() %}
+                        <div class="p-4 mb-3 border rounded-lg cursor-pointer 
+                                    {% if request.form.get('metodo_pago') == metodo %}border-blue-500 bg-blue-50{% else %}border-gray-300{% endif %}">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-medium">{{ metodo }}</h4>
+                                <input type="radio" 
+                                       name="metodo_pago" 
+                                       value="{{ metodo }}"
+                                       {% if request.form.get('metodo_pago') == metodo %}checked{% endif %}
+                                       class="h-4 w-4 text-blue-600">
+                            </div>
+
+                            {% if detalles.requiere_comprobante %}
+                                <div class="mt-3">
+                                    <label class="block text-sm font-medium mb-1">
+                                        Subir comprobante (imagen o PDF):
+                                    </label>
+                                    <input type="file"
+                                           name="comprobante"
+                                           class="block w-full text-sm text-gray-500
+                                                 file:mr-4 file:py-2 file:px-4
+                                                 file:rounded-md file:border-0
+                                                 file:text-sm file:font-semibold
+                                                 file:bg-blue-50 file:text-blue-700
+                                                 hover:file:bg-blue-100"
+                                           accept="image/*,.pdf">
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <!-- Total -->
+                    <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                        <h3 class="font-semibold">Total a pagar:</h3>
+                        <p class="text-2xl font-bold">${{ "%.2f"|format(monto_total) }}</p>
+                    </div>
+
+                    <!-- Botón -->
+                    <button type="submit"
+                            class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold">
+                        Confirmar Reserva
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

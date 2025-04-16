@@ -23,9 +23,7 @@
                    min="{{ fecha_actual }}"
                    class="border p-2 rounded shadow"
                    name="fecha"
-                   hx-get="{{ url_for('client.reservar', cancha=cancha.id) }}"
-                   hx-target="body"
-                   hx-swap="innerHTML">
+                   onchange="window.location.href='{{ url_for('client.reservar', cancha=cancha.id) }}&fecha='+this.value+'&horas_seleccionadas={{ horas_seleccionadas|join(',') }}'">
         </div>
 
         {% if error_fecha %}
@@ -40,19 +38,20 @@
             </h2>
 
             {% if horarios %}
-                <div class="flex flex-wrap gap-3 justify-center">
-                    {% for horario in horarios %}
-                        <button class="px-4 py-2 border rounded-lg shadow transition-all
-                            {% if horario.start_time in horas_seleccionadas %}bg-blue-800 text-white
-                            {% else %}bg-white hover:bg-blue-100{% endif %}"
-                            hx-post="{{ url_for('client.reservar', cancha=cancha.id, fecha=fecha_seleccionada) }}"
-                            hx-vals='{"hora": "{{ horario.start_time }}"}'
-                            hx-target="body"
-                            hx-swap="innerHTML">
-                            {{ horario.formatted_time }}
-                        </button>
-                    {% endfor %}
-                </div>
+                <form method="POST" action="{{ url_for('client.reservar', cancha=cancha.id, fecha=fecha_seleccionada, horas_seleccionadas=horas_seleccionadas|join(',')) }}">
+                    <div class="flex flex-wrap gap-3 justify-center">
+                        {% for horario in horarios %}
+                            <button type="submit"
+                                    name="hora"
+                                    value="{{ horario.start_time }}"
+                                    class="px-4 py-2 border rounded-lg shadow transition-all
+                                           {% if horario.start_time in horas_seleccionadas %}bg-blue-800 text-white
+                                           {% else %}bg-white hover:bg-blue-100{% endif %}">
+                                {{ horario.formatted_time }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </form>
             {% else %}
                 <div class="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
                     <p class="text-gray-600 text-lg font-medium mb-2">
@@ -67,6 +66,17 @@
 
         {% if horas_seleccionadas %}
             <div class="mb-8">
+                <h3 class="text-xl font-bold text-blue-950 mb-2">
+                    Horas seleccionadas
+                </h3>
+                <div class="mb-4">
+                    {% for hora in horas_seleccionadas %}
+                        <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full mr-2 mb-2">
+                            {{ hora|format_hora }}
+                        </span>
+                    {% endfor %}
+                </div>
+
                 <h3 class="text-xl font-bold text-blue-950 mb-2">
                     Monto a pagar
                 </h3>

@@ -173,9 +173,7 @@ def mis_reservas():
 
     return render_template('client/mis_reservas.html', reservas=formatted_reservas)
 
-
-# Ruta para la reserva de cancha
-@client_bp.route('/reservar')
+@client_bp.route('/reservar', methods=['GET', 'POST'])
 @login_required
 def reservar():
     cancha_id = request.args.get('cancha')
@@ -183,73 +181,103 @@ def reservar():
     hora = request.args.get('hora')
 
     if not cancha_id:
+        flash('Debes seleccionar una cancha', 'error')
         return redirect(url_for('client.principal'))
 
     try:
         cancha = Cancha.query.get_or_404(cancha_id)
+        
+        # Manejar horas seleccionadas
+        horas_seleccionadas = request.args.getlist('horas_seleccionadas')
+        if isinstance(horas_seleccionadas, str):
+            horas_seleccionadas = [horas_seleccionadas] if horas_seleccionadas else []
+        
+        # Si se pasa una hora por parámetro, agregarla
+        if hora and hora not in horas_seleccionadas:
+            horas_seleccionadas.append(hora)
 
+        # Procesar selección/deselección de horas
+        if request.method == 'POST':
+            hora_seleccionada = request.form.get('hora')
+            if hora_seleccionada:
+                if hora_seleccionada in horas_seleccionadas:
+                    horas_seleccionadas.remove(hora_seleccionada)
+                else:
+                    horas_seleccionadas.append(hora_seleccionada)
+                return redirect(url_for('client.reservar', 
+                                     cancha=cancha.id, 
+                                     fecha=fecha, 
+                                     horas_seleccionadas=horas_seleccionadas))
+
+        # Obtener horarios disponibles para la fecha
         horarios = Horario.query.filter_by(
             cancha_id=cancha_id,
             date=fecha,
             estado='disponible'
         ).order_by(Horario.start_time).all()
 
+        # Formatear horarios para la vista
         formatted_horarios = []
         for horario in horarios:
             formatted_horarios.append({
                 'start_time': horario.start_time.strftime('%H:%M:%S'),
-                'formatted_time': format_time(horario.start_time)
+                'formatted_time': horario.start_time.strftime('%I:%M %p').lstrip('0').lower()
             })
 
+        # Validar fecha
         fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
         fecha_error = ""
         if fecha_obj < get_current_date():
             fecha_error = "No se pueden seleccionar fechas anteriores al día actual."
 
-        horas_seleccionadas = [hora] if hora else []
-
+        # Calcular monto total (asegurando que sea float)
         monto_total = len(horas_seleccionadas) * float(cancha.price_per_hour)
 
         return render_template('client/reservar.html',
-                               cancha=cancha,
-                               fecha_seleccionada=fecha,
-                               horas_seleccionadas=horas_seleccionadas,
-                               horarios=formatted_horarios,
-                               error_fecha=fecha_error,
-                               monto_total=monto_total,
-                               fecha_actual=get_current_date().strftime('%Y-%m-%d'))
+                           cancha=cancha,
+                           fecha_seleccionada=fecha,
+                           horas_seleccionadas=horas_seleccionadas,
+                           horarios=formatted_horarios,
+                           error_fecha=fecha_error,
+                           monto_total=monto_total,
+                           fecha_actual=get_current_date().strftime('%Y-%m-%d'))
 
     except Exception as e:
-        return render_template('client/reservar.html', error=str(e))
+        current_app.logger.error(f"Error en reservar: {str(e)}")
+        flash('Ocurrió un error al cargar la página de reserva', 'error')
+        return redirect(url_for('client.principal'))
 
 
 @client_bp.route('/metodospago')
 @login_required
 def metodospago():
-    cancha_id = request.args.get('cancha')
-    fecha = request.args.get('fecha')
-    horarios = request.args.get('horarios', '').split(',')
-    monto_total = request.args.get('montoTotal')
-
-    if not all([cancha_id, fecha, horarios, monto_total]):
-        return redirect(url_for('client.principal'))
-
     try:
+        cancha_id = request.args.get('cancha')
+        fecha = request.args.get('fecha')
+        horarios = request.args.get('horarios', '').split(',')
+        monto_total = float(request.args.get('montoTotal', 0))  # Convertir a float aquí
+
+        if not all([cancha_id, fecha, horarios]):
+            flash('Faltan parámetros necesarios para el pago', 'error')
+            return redirect(url_for('client.principal'))
+
         cancha = Cancha.query.get_or_404(cancha_id)
 
+        # Filtrar horarios vacíos
+        horarios = [h for h in horarios if h]
+        
+        # Formatear horarios para mostrar
         horarios_formateados = []
         for hora in horarios:
-            if not hora:
-                continue
-
             hora_inicio = datetime.strptime(hora, '%H:%M:%S').time()
             hora_fin = (datetime.combine(datetime.min, hora_inicio) + timedelta(hours=1)).time()
-
+            
             horarios_formateados.append({
                 'inicio': format_time(hora_inicio),
                 'fin': format_time(hora_fin)
             })
 
+        # Métodos de pago disponibles
         metodos_pago = {
             "Pago Móvil": {"requiere_comprobante": True},
             "Zelle": {"requiere_comprobante": True},
@@ -257,15 +285,16 @@ def metodospago():
         }
 
         return render_template('client/metodospago.html',
-                               cancha=cancha,
-                               fecha=fecha,
-                               horarios=horarios_formateados,
-                               monto_total=monto_total,
-                               metodos_pago=metodos_pago)
+                           cancha=cancha,
+                           fecha=fecha,
+                           horarios=horarios_formateados,
+                           monto_total=monto_total,
+                           metodos_pago=metodos_pago)
 
     except Exception as e:
-        return render_template('client/metodospago.html', error=str(e))
-
+        current_app.logger.error(f"Error en metodospago: {str(e)}")
+        flash('Ocurrió un error al procesar el pago', 'error')
+        return redirect(url_for('client.principal'))
 
 @client_bp.route('/procesar_reserva', methods=['POST'])
 @login_required

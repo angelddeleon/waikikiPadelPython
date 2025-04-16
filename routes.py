@@ -215,13 +215,14 @@ def reservar():
             estado='disponible'
         ).order_by(Horario.start_time).all()
 
-        # Formatear horarios para la vista (formato 12 horas)
+        # Formatear horarios para la vista
         formatted_horarios = []
         for horario in horarios:
-            formatted_time = horario.start_time.strftime('%I:%M %p').lstrip('0').lower()
+            hora_str = horario.start_time.strftime('%H:%M:%S')
             formatted_horarios.append({
-                'start_time': horario.start_time.strftime('%H:%M:%S'),  # Guardar en formato 24h
-                'formatted_time': formatted_time  # Mostrar en formato 12h
+                'start_time': hora_str,  # Formato 24h para comparación
+                'formatted_time': horario.start_time.strftime('%I:%M %p').lstrip('0').lower(),  # Formato 12h para mostrar
+                'is_selected': hora_str in horas_seleccionadas  # Indicador de selección
             })
 
         # Validar fecha

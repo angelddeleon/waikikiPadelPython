@@ -1,5 +1,5 @@
-<a href="{{ url_for('client.reservar', cancha=cancha_id, hora=horario.start_time.strftime('%H:%M:%S'), fecha=horario.date.strftime('%Y-%m-%d')) }}">
-    <div id="horario" class="flex justify-center items-center border w-60  mr-2 p-2 shadow rounded hover:bg-[#113872] hover:text-white duration-300 ease-in">
+<a href="{{ url_for('client.reservar', cancha=cancha.id, fecha=horario.date.strftime('%Y-%m-%d'), hora=horario.start_time.strftime('%H:%M:%S')) }}">
+    <div id="horario" class="flex justify-center items-center border w-60 mr-2 p-2 shadow rounded hover:bg-[#113872] hover:text-white duration-300 ease-in">
         <p>{{ horario.start_time.strftime('%I:%M %p') }}</p>
     </div>
 </a>

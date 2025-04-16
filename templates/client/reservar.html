@@ -45,7 +45,7 @@
                                     name="hora"
                                     value="{{ horario.start_time }}"
                                     class="px-4 py-2 border rounded-lg shadow transition-all
-                                           {% if horario.start_time in horas_seleccionadas %}bg-blue-800 text-white
+                                           {% if horario.is_selected %}bg-blue-800 text-white
                                            {% else %}bg-white hover:bg-blue-100{% endif %}">
                                 {{ horario.formatted_time }}
                             </button>

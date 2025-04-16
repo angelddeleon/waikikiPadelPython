@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, current_app
 from models import db, Cancha, Horario, Reservacion, Usuario, Pago
 from datetime import datetime, time, timedelta
 import pytz
@@ -28,6 +28,51 @@ def format_time(time_str):
     else:
         time_obj = time_str
     return time_obj.strftime("%I:%M %p")
+
+def obtener_horas_disponibles(cancha_id, fecha):
+    try:
+        vzla_timezone = pytz.timezone("America/Caracas")
+        hora_actual_vzla = datetime.now(vzla_timezone).strftime("%H:%M:%S")
+        dia_actual = datetime.today().date()
+        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+
+        # Primero intentamos con la fecha solicitada
+        horarios_ocupados = Horario.query.filter_by(
+            cancha_id=cancha_id, 
+            date=fecha_obj,
+            estado='ocupado'
+        ).all()
+        
+        horas_ocupadas = [ho.start_time.strftime('%H:%M:%S') for ho in horarios_ocupados]
+        horarios_disponibles = []
+
+        # Generar horarios de 8:00 a 23:00
+        for hora in range(8, 23):
+            hora_inicio = time(hour=hora, minute=0, second=0).strftime('%H:%M:%S')
+            
+            # Verificar disponibilidad
+            if ((fecha_obj > dia_actual) or 
+                (fecha_obj == dia_actual and hora_inicio > hora_actual_vzla)):
+                if hora_inicio not in horas_ocupadas:
+                    horario = Horario(
+                        cancha_id=cancha_id,
+                        date=fecha_obj,
+                        start_time=time(hour=hora, minute=0, second=0),
+                        end_time=time(hour=hora+1, minute=0, second=0),
+                        estado='disponible'
+                    )
+                    horarios_disponibles.append(horario)
+
+        # Si no hay horarios disponibles para la fecha solicitada, probamos con el día siguiente
+        if not horarios_disponibles and fecha_obj == dia_actual:
+            dia_siguiente = dia_actual + timedelta(days=1)
+            return obtener_horas_disponibles(cancha_id, dia_siguiente.strftime('%Y-%m-%d'))
+
+        return horarios_disponibles
+
+    except Exception as e:
+        print(f"Error al obtener horarios disponibles: {e}")
+        return None
 
 @client_bp.route('/', methods=['GET', 'POST'])
 def login():
@@ -75,10 +120,6 @@ def logout():
 @login_required
 def principal():
     try:
-        # Definir el rango de tiempo de 8:00 AM a 10:00 PM
-        start_hour = 8  # 8:00 AM
-        end_hour = 23  # 10:00 PM
-        
         # Obtener la fecha actual en la zona horaria de Venezuela
         vzla_tz = pytz.timezone('America/Caracas')
         now_vzla = datetime.now(vzla_tz)
@@ -88,44 +129,16 @@ def principal():
         canchas = Cancha.query.all()
         canchas_con_horarios = []
 
-        # Para cada cancha, generar los horarios dentro del rango de tiempo
+        # Para cada cancha, obtener los horarios disponibles
         for cancha in canchas:
-            horarios_disponibles = []
+            horarios_disponibles = obtener_horas_disponibles(cancha.id, fecha_actual)
 
-            for hour in range(start_hour, end_hour):
-                # Generar un horario para cada hora en el rango
-                start_time = time(hour, 0, 0)  # Inicia en la hora completa
-                end_time = time(hour + 1, 0, 0)  # El horario termina 1 hora después
-
-                # Verificar si ya existe un horario para esa cancha y fecha
-                horario_existente = Horario.query.filter_by(
-                    cancha_id=cancha.id,
-                    date=fecha_actual,
-                    start_time=start_time
-                ).first()
-
-                # Si no existe, se crea un nuevo horario disponible
-                if not horario_existente:
-                    horario = Horario(
-                        cancha_id=cancha.id,
-                        date=fecha_actual,
-                        start_time=start_time,
-                        end_time=end_time,
-                        estado='disponible'
-                    )
-                    db.session.add(horario)
-                    db.session.commit()
-                    horarios_disponibles.append(horario)
-                elif horario_existente.estado == 'disponible':
-                    horarios_disponibles.append(horario_existente)
-
-            # Añadir la cancha y sus horarios disponibles a la lista
-            canchas_con_horarios.append({
-                'cancha': cancha,
-                'horarios': horarios_disponibles
-            })
-
-        print(canchas_con_horarios)  # Para depuración, muestra los horarios
+            # Si no hay horarios disponibles para la cancha, no la mostramos
+            if horarios_disponibles:
+                canchas_con_horarios.append({
+                    'cancha': cancha,
+                    'horarios': horarios_disponibles
+                })
 
         # Obtener las reservas del usuario
         reservas = Reservacion.query.join(Horario).filter(
@@ -153,7 +166,6 @@ def principal():
 
     except Exception as e:
         return render_template('client/principal.html', error=str(e))
-
 
 # Ruta para mis reservas
 @client_bp.route('/mis_reservas')
@@ -186,67 +198,62 @@ def reservar():
 
     try:
         cancha = Cancha.query.get_or_404(cancha_id)
+        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+        dia_actual = get_current_date()
+
+        # Obtener horarios disponibles (puede devolver horarios del día siguiente)
+        horarios_disponibles = obtener_horas_disponibles(cancha.id, fecha)
         
-        # Obtener horas seleccionadas desde parámetros GET
+        # Si se cambiaron al día siguiente, actualizamos la fecha
+        if horarios_disponibles and horarios_disponibles[0].date != fecha_obj:
+            nueva_fecha = horarios_disponibles[0].date.strftime('%Y-%m-%d')
+            flash(f'No hay horarios disponibles para la fecha seleccionada. Mostrando horarios para {nueva_fecha}', 'info')
+            return redirect(url_for('client.reservar', 
+                                 cancha=cancha.id,
+                                 fecha=nueva_fecha,
+                                 hora=hora,
+                                 horas_seleccionadas=request.args.get('horas_seleccionadas', '')))
+
+        # Procesar horas seleccionadas
         horas_seleccionadas = request.args.get('horas_seleccionadas', '')
-        horas_seleccionadas = horas_seleccionadas.split(',') if horas_seleccionadas else []
+        horas_seleccionadas = [h for h in horas_seleccionadas.split(',') if h]
         
-        # Si viene una hora por parámetro, agregarla si no existe
         if hora and hora not in horas_seleccionadas:
             horas_seleccionadas.append(hora)
 
-        # Procesar selección/deselección si es POST
-        if request.method == 'POST':
-            hora_seleccionada = request.form.get('hora')
-            if hora_seleccionada:
-                if hora_seleccionada in horas_seleccionadas:
-                    horas_seleccionadas.remove(hora_seleccionada)
-                else:
-                    horas_seleccionadas.append(hora_seleccionada)
-                return redirect(url_for('client.reservar', 
-                                     cancha=cancha.id, 
-                                     fecha=fecha, 
-                                     horas_seleccionadas=','.join(horas_seleccionadas)))
-
-        # Obtener horarios disponibles para la fecha
-        horarios = Horario.query.filter_by(
-            cancha_id=cancha_id,
-            date=fecha,
-            estado='disponible'
-        ).order_by(Horario.start_time).all()
-
-        # Formatear horarios para la vista
-        formatted_horarios = []
-        for horario in horarios:
-            hora_str = horario.start_time.strftime('%H:%M:%S')
-            formatted_horarios.append({
-                'start_time': hora_str,  # Formato 24h para comparación
-                'formatted_time': horario.start_time.strftime('%I:%M %p').lstrip('0').lower(),  # Formato 12h para mostrar
-                'is_selected': hora_str in horas_seleccionadas  # Indicador de selección
-            })
-
         # Validar fecha
-        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
         fecha_error = ""
-        if fecha_obj < get_current_date():
+        if fecha_obj < dia_actual:
             fecha_error = "No se pueden seleccionar fechas anteriores al día actual."
+            horarios_disponibles = []
 
-        # Calcular monto total
+        # Calcular monto
         monto_total = len(horas_seleccionadas) * float(cancha.price_per_hour)
+
+        # Manejar POST (selección de hora)
+        if request.method == 'POST' and 'hora' in request.form:
+            nueva_hora = request.form['hora']
+            if nueva_hora not in horas_seleccionadas:
+                horas_seleccionadas.append(nueva_hora)
+            return redirect(url_for('client.reservar',
+                                cancha=cancha.id,
+                                fecha=fecha,
+                                horas_seleccionadas=','.join(horas_seleccionadas)))
 
         return render_template('client/reservar.html',
                            cancha=cancha,
                            fecha_seleccionada=fecha,
                            horas_seleccionadas=horas_seleccionadas,
-                           horarios=formatted_horarios,
+                           horarios=horarios_disponibles,
                            error_fecha=fecha_error,
                            monto_total=monto_total,
-                           fecha_actual=get_current_date().strftime('%Y-%m-%d'))
+                           fecha_actual=dia_actual.strftime('%Y-%m-%d'))
 
     except Exception as e:
         current_app.logger.error(f"Error en reservar: {str(e)}")
         flash('Ocurrió un error al cargar la página de reserva', 'error')
         return redirect(url_for('client.principal'))
+
 
 @client_bp.route('/metodospago')
 @login_required

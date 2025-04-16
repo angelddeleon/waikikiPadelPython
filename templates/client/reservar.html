@@ -43,11 +43,11 @@
                         {% for horario in horarios %}
                             <button type="submit"
                                     name="hora"
-                                    value="{{ horario.start_time }}"
+                                    value="{{ horario.start_time.strftime('%H:%M:%S') }}"
                                     class="px-4 py-2 border rounded-lg shadow transition-all
-                                           {% if horario.is_selected %}bg-blue-800 text-white
+                                           {% if horario.start_time.strftime('%H:%M:%S') in horas_seleccionadas %}bg-blue-800 text-white
                                            {% else %}bg-white hover:bg-blue-100{% endif %}">
-                                {{ horario.formatted_time }}
+                                {{ horario.start_time.strftime('%I:%M %p')|lower }}  <!-- Muestra en AM/PM -->
                             </button>
                         {% endfor %}
                     </div>
@@ -72,7 +72,7 @@
                 <div class="mb-4">
                     {% for hora in horas_seleccionadas %}
                         <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full mr-2 mb-2">
-                            {{ hora|format_time_12h }}
+                            {{ hora|format_time_12h }}  <!-- Usa el filtro para formato AM/PM -->
                         </span>
                     {% endfor %}
                 </div>

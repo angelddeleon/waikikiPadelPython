@@ -1,0 +1,55 @@
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="example2" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID Reserva</th>
+                        <th>Nombre Usuario</th>
+                        <th>Teléfono</th>
+                        <th>Fecha</th>
+                        <th>Hora Inicio</th>
+                        <th>Hora Fin</th>
+                        <th>Cancha</th> <!-- Nueva columna para la cancha -->
+                        <th>ID Pago</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservacion in reservas %}
+                        <tr>
+                            <td>{{ reservacion.id }}</td>
+                            <td>{{ reservacion.usuario.nombre }}</td>
+                            <td>{{ reservacion.usuario.telefono }}</td>
+                            <td>{{ reservacion.horario.date }}</td>
+                            <td>{{ reservacion.start_time_formatted }}</td>
+                            <td>{{ reservacion.end_time_formatted }}</td>
+                            <td>{{ reservacion.horario.cancha.name }}</td> <!-- Mostrar el nombre de la cancha -->
+                            <td>
+                                {% if reservacion.pago_id %}
+                                    {{ reservacion.pago_id }}  <!-- Suponiendo que una reservación tiene un solo pago -->
+                                {% else %}
+                                    Admin
+                                {% endif %}
+                            </td>
+                            <td>{{ reservacion.status }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>ID Reserva</th>
+                        <th>Nombre Usuario</th>
+                        <th>Teléfono</th>
+                        <th>Fecha</th>
+                        <th>Hora Inicio</th>
+                        <th>Hora Fin</th>
+                        <th>Cancha</th> <!-- Nueva columna para la cancha -->
+                        <th>ID Pago</th>
+                        <th>Estado</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>

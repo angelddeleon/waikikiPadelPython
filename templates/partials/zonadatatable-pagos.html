@@ -1,0 +1,194 @@
+
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="example2" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID Pago</th>
+                        <th>Usuario</th>
+                        <th>Reservas</th>
+                        <th>Tasa</th>
+                        <th>Monto</th>
+                        <th>Método de Pago</th>
+                        <th>Comprobante de Pago</th>
+                        <th>Estado del Pago</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.id }}</td>
+                            <td>{{ pago.usuario.nombre }}</td>
+                            <td>
+                                {% if pago.reservaciones %}
+                                {% for reserva in pago.reservaciones %}
+                                    {{ reserva.id }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                Sin reservas
+                            {% endif %}
+                            </td>
+                            <td>{{ pago.tasa_valor }}</td>
+                            <td>{{ pago.amount }}</td>
+                            <td>{{ pago.payment_method }}</td>
+                            <td>
+                                {% if pago.payment_proof == "Admin" %}
+                                    <p>Administrador</p>
+                                {% elif pago.payment_proof is none %}
+                                    <p>El pago no tiene comprobante.</p>
+                                {% else %}
+                                    <!-- Icono de imagen para abrir el modal -->
+                                    <i class="bx bx-image" style="font-size: 24px; cursor: pointer;" onclick="openModal('https://backend.waikikipadel.com/uploads/comprobante/{{ pago.payment_proof }}')"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ pago.payment_status }}</td>
+                            <td>
+                                <form action="{{ url_for('main.update_payment_status', pago_id=pago.id) }}" method="POST">
+                                    <select name="payment_status" class="form-select">
+                                        <option value="pendiente" {% if pago.payment_status == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                        <option value="completado" {% if pago.payment_status == 'completado' %}selected{% endif %}>Completado</option>
+                                        <option value="rechazado" {% if pago.payment_status == 'rechazado' %}selected{% endif %}>Rechazado</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary mt-2">Actualizar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>ID Pago</th>
+                        <th>Usuario</th>
+                        <th>Reserva</th>
+                        <th>Tasa</th>
+                        <th>Monto</th>
+                        <th>Método de Pago</th>
+                        <th>Comprobante de Pago</th>
+                        <th>Estado del Pago</th>
+                        <th>Acciones</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Imagen -->
+<div id="imageModal" class="modal" style="display: none;" onclick="closeModal()">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img id="modalImage" src="" alt="Comprobante de Pago" style="width: 100%; height: auto;">
+    </div>
+</div>
+
+<!-- Estilos del Modal -->
+<style>
+    /* El modal se oculta inicialmente */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8); /* Fondo oscuro */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* El contenido del modal */
+    .modal-content {
+        position: relative;
+        width: 90%; /* 90% del ancho de la pantalla */
+        max-width: 700px; /* Limitar a un tamaño máximo */
+        text-align: center;
+    }
+
+    /* La "X" para cerrar el modal */
+    .close {
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        position: absolute;
+        top: 10px;
+        right: 25px;
+        cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: #999;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    /* Imagen dentro del modal */
+    #modalImage {
+        width: 100%;
+        height: auto;
+        max-width: 100%; /* Asegura que no se desborde */
+        max-height: 90vh; /* Asegura que la imagen no ocupe más del 90% de la altura de la ventana */
+        object-fit: contain; /* Mantiene la relación de aspecto de la imagen */
+        margin: 0 auto;
+        display: block;
+    }
+</style>
+
+<!-- Bootstrap JS -->
+<script src="{{ url_for('static', filename='assets/js/bootstrap.bundle.min.js') }}"></script>
+<!--plugins-->
+<script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/plugins/metismenu/js/metisMenu.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/plugins/perfect-scrollbar/js/perfect-scrollbar.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/js/app.js') }}"></script>
+
+<script>
+    $(document).ready(function() {
+
+        // Asegúrate de que el contenedor del sidebar esté presente
+        var sidebarWrapper = document.querySelector('.sidebar-wrapper');
+        
+        if (sidebarWrapper) {
+            // Inicializa PerfectScrollbar solo si el contenedor existe
+            new PerfectScrollbar(sidebarWrapper);
+        }
+
+        // Inicializa MetisMenu para el comportamiento del menú desplegable
+        $('#sidebarMenu').metisMenu();
+    });
+
+</script>
+<script>
+        // Función para abrir el modal y mostrar la imagen
+        function openModal(imageSrc) {
+        var modal = document.getElementById("imageModal");
+        var modalImage = document.getElementById("modalImage");
+
+        // Establecer el src de la imagen dentro del modal
+        modalImage.src = imageSrc;
+
+        // Mostrar el modal
+        modal.style.display = "flex";
+    }
+
+    // Función para cerrar el modal cuando se hace clic fuera de él
+    function closeModal() {
+        var modal = document.getElementById("imageModal");
+        modal.style.display = "none";
+    }
+
+    // Cerrar el modal si el usuario hace clic fuera de la imagen
+    window.onclick = function(event) {
+        var modal = document.getElementById("imageModal");
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>

@@ -1,0 +1,50 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+#app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+#mis-reservaciones, #canchas-disponibles {
+    margin-bottom: 40px;
+}
+
+#whatsapp-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
+h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+#reservas-container, #canchas-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+div {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+button {
+    padding: 10px;
+    background-color: #1E3A8A;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #3B82F6;
+}

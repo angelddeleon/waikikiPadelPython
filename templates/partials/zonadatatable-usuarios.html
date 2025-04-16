@@ -1,0 +1,50 @@
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="example2" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Teléfono</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>{{ usuario.id }}</td>
+                        <td>{{ usuario.nombre }}</td>
+                        <td>{{ usuario.email }}</td>
+                        <td>{{ usuario.telefono }}</td>
+                        <td>{{ usuario.role }}</td>
+                        <td>{{ 'Bloqueado' if usuario.isBlocked else 'Activo' }}</td>
+                        <td>
+                            <!-- Botón para bloquear/desbloquear usuario con iconos -->
+                            <form action="{{ url_for('main.toggle_block', user_id=usuario.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-{{ 'danger' if usuario.isBlocked else 'success' }}">
+                                    <i class="bx {{ 'bx-lock' if usuario.isBlocked else 'bx-lock-open' }}"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Teléfono</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>

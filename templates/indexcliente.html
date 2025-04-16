@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi App de Reservas</title>
+    <link rel="stylesheet" href="static/assets/css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Sección de Mis Reservaciones -->
+        <div id="mis-reservaciones">
+            <h1>Mis Reservaciones</h1>
+            <div id="reservas-container"></div>
+        </div>
+
+        <!-- Sección de Canchas Disponibles -->
+        <div id="canchas-disponibles">
+            <h1>Canchas Disponibles</h1>
+            <div id="canchas-container"></div>
+        </div>
+
+        <!-- Botón de WhatsApp -->
+        <div id="whatsapp-button">
+            <a href="https://wa.me/584244520697?text=Hola, 1.Me interesa hacer una reserva en su cancha, 2.Tuve un problema al hacer mi reserva" target="_blank">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" width="50" height="50">
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Función para obtener las reservas
+        const fetchReservas = async () => {
+            try {
+                const response = await fetch('/api/reservas');
+                const reservas = await response.json();
+
+                const reservasContainer = document.getElementById("reservas-container");
+                reservasContainer.innerHTML = ''; // Limpiar el contenedor
+
+                if (reservas.length === 0) {
+                    reservasContainer.innerHTML = `
+                        <div>
+                            <p>No tienes reservas. <a href="/canchasdispo">Reserva una cancha aquí</a>.</p>
+                        </div>
+                    `;
+                } else {
+                    reservas.forEach(reserva => {
+                        const reservaElement = document.createElement("div");
+                        reservaElement.innerHTML = `
+                            <div>
+                                <h3>${reserva.cancha_name}</h3>
+                                <p>${reserva.fecha_reserva} - ${reserva.start_time} - ${reserva.end_time}</p>
+                            </div>
+                        `;
+                        reservasContainer.appendChild(reservaElement);
+                    });
+                }
+            } catch (error) {
+                console.error('Error al obtener las reservas:', error);
+            }
+        };
+
+        // Función para obtener las canchas disponibles
+        const fetchCanchas = async () => {
+            try {
+                const response = await fetch('/api/canchas');
+                const canchas = await response.json();
+
+                const canchasContainer = document.getElementById("canchas-container");
+                canchasContainer.innerHTML = ''; // Limpiar el contenedor
+
+                canchas.forEach(cancha => {
+                    const canchaElement = document.createElement("div");
+                    canchaElement.innerHTML = `
+                        <div>
+                            <h3>${cancha.name}</h3>
+                            <img src="${cancha.image}" alt="${cancha.name}" width="100">
+                            <p>${cancha.price_per_hour} USD/hora</p>
+                            <div>
+                                <button>Reservar</button>
+                            </div>
+                        </div>
+                    `;
+                    canchasContainer.appendChild(canchaElement);
+                });
+            } catch (error) {
+                console.error('Error al obtener las canchas:', error);
+            }
+        };
+
+        // Cargar datos al inicio
+        window.onload = () => {
+            fetchReservas();
+            fetchCanchas();
+        };
+    </script>
+</body>
+</html>

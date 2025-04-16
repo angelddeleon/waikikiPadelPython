@@ -1,0 +1,93 @@
+<header class="bg-blue-950 text-white shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-3">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <a href="{{ url_for('client.principal') }}" class="flex items-center">
+                    <img src="{{ url_for('static', filename='assets/imagenes/Logo-Waikiki-BLANCO.png') }}" 
+                         alt="Waikiki Padel" 
+                         class="h-10 md:h-12 mr-2">
+                </a>
+            </div>
+
+            <!-- Navegación principal - Desktop -->
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('client.principal') }}" 
+                   class="nav-link text-white hover:text-blue-300 font-medium transition-colors">
+                    Inicio
+                </a>
+                <a href="{{ url_for('client.mis_reservas') }}" 
+                   class="nav-link text-white hover:text-blue-300 font-medium transition-colors">
+                    Mis Reservas
+                </a>
+
+                {% if current_user.is_authenticated %}
+                    <div class="dropdown relative">
+                        <button class="flex items-center space-x-1 focus:outline-none">
+                            <span class="font-medium">{{ current_user.nombre.split(' ')[0] }}</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                            <a href="{{ url_for('client.perfil') }}" 
+                               class="block px-4 py-2 text-gray-800 hover:bg-blue-50">
+                                <i class="fas fa-user-circle mr-2"></i> Mi Perfil
+                            </a>
+                            <a href="{{ url_for('client.logout') }}" 
+                               class="block px-4 py-2 text-gray-800 hover:bg-blue-50">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('client.login') }}" 
+                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        Iniciar Sesión
+                    </a>
+                {% endif %}
+            </nav>
+
+            <!-- Botón del menú móvil -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-white focus:outline-none">
+                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Menú móvil -->
+        <div id="mobile-menu" class="mobile-menu md:hidden bg-blue-900">
+            <div class="px-2 pt-2 pb-4 space-y-2">
+                <a href="{{ url_for('client.principal') }}" 
+                   class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-800">
+                    Inicio
+                </a>
+                <a href="{{ url_for('client.mis_reservas') }}" 
+                   class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-800">
+                    Mis Reservas
+                </a>
+
+                {% if current_user.is_authenticated %}
+                    <div class="border-t border-blue-800 pt-2 mt-2">
+                        <a href="{{ url_for('client.perfil') }}" 
+                           class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-800">
+                            <i class="fas fa-user-circle mr-2"></i> Mi Perfil
+                        </a>
+                        <a href="{{ url_for('client.logout') }}" 
+                           class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-800">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('client.login') }}" 
+                       class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium mt-2">
+                        Iniciar Sesión
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</header>

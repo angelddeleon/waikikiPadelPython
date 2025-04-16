@@ -1,0 +1,35 @@
+<div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+    <a href="{{ url_for('client.reservar', cancha=cancha.id) }}">
+        <img src="{{ url_for('static', filename='assets/public' + cancha.image) }}" 
+             alt="{{ cancha.name }}" 
+             class="w-full h-48 object-cover">
+        <div class="p-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">{{ cancha.name }}</h3>
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">1 h desde</p>
+                    <p class="text-lg font-bold text-blue-900">US ${{ "%.2f"|format(cancha.price_per_hour) }}</p>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <!-- Available schedules -->
+    <div class="px-4 pb-4">
+        {% if horarios %}
+            <div class="flex overflow-x-auto gap-2 pb-2">
+                {% for horario in horarios %}
+                    {% include 'client/horario.html' %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-2 bg-gray-50 rounded-lg">
+                <p class="text-gray-600 mb-2">No hay horarios para hoy</p>
+                <a href="{{ url_for('client.reservar', cancha=cancha.id) }}"
+                   class="text-blue-600 font-medium hover:underline">
+                    Buscar horarios para mañana
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>

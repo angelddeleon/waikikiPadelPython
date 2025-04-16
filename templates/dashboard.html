@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--favicon-->
+    <link rel="icon" href="{{ url_for('static', filename='assets/images/favicon-32x32.png') }}" type="image/png" />
+    <!--plugins-->
+    <link href="{{ url_for('static', filename='assets/plugins/simplebar/css/simplebar.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='assets/plugins/perfect-scrollbar/css/perfect-scrollbar.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='assets/plugins/metismenu/css/metisMenu.min.css') }}" rel="stylesheet" />
+    <!-- Bootstrap CSS -->
+    <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='assets/css/bootstrap-extended.css') }}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='assets/css/app.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='assets/css/icons.css') }}" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="public/Logo-Waikiki-NEGRO.png" />
+
+</head>
+
+<body>
+
+    {% include 'partials/sidebar.html' %}
+    <div class="page-wrapper">
+        <div class="page-content">
+            {% include 'partials/zona-usuario.html' %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="{{ url_for('static', filename='assets/js/bootstrap.bundle.min.js') }}"></script>
+    <!--plugins-->
+    <script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/plugins/metismenu/js/metisMenu.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/plugins/perfect-scrollbar/js/perfect-scrollbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/app.js') }}"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Asegúrate de que el contenedor del sidebar esté presente
+            var sidebarWrapper = document.querySelector('.sidebar-wrapper');
+            
+            if (sidebarWrapper) {
+                // Inicializa PerfectScrollbar solo si el contenedor existe
+                new PerfectScrollbar(sidebarWrapper);
+            }
+
+            // Inicializa MetisMenu para el comportamiento del menú desplegable
+            $('#sidebarMenu').metisMenu();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,94 @@
+{% extends "client/base.html" %}
+
+{% block content %}
+<div class="flex flex-col min-h-screen">
+    <img src="{{ url_for('static', filename='assets/public' + cancha.image) }}" 
+         alt="Cancha {{ cancha.name }}"
+         class="w-full h-40 object-cover">
+
+    <div class="p-4 flex-grow overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-blue-950">Reservar:</h1>
+            <h2 class="text-xl md:text-2xl font-bold text-green-600">
+                {{ cancha.name }}
+            </h2>
+        </div>
+
+        <div class="flex flex-col md:flex-row md:justify-between items-center mb-6">
+            <h1 class="text-xl font-bold text-blue-950 mb-2 md:mb-0">
+                Elige cuando deseas jugar:
+            </h1>
+            <input type="date"
+                   value="{{ fecha_seleccionada }}"
+                   min="{{ fecha_actual }}"
+                   class="border p-2 rounded shadow"
+                   name="fecha"
+                   hx-get="{{ url_for('client.reservar', cancha=cancha.id) }}"
+                   hx-target="body"
+                   hx-swap="innerHTML">
+        </div>
+
+        {% if error_fecha %}
+            <div class="text-red-500 text-center mb-4">
+                {{ error_fecha }}
+            </div>
+        {% endif %}
+
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-blue-950 mb-4">
+                Horas disponibles
+            </h2>
+
+            {% if horarios %}
+                <div class="flex flex-wrap gap-3 justify-center">
+                    {% for horario in horarios %}
+                        <button class="px-4 py-2 border rounded-lg shadow transition-all
+                            {% if horario.start_time in horas_seleccionadas %}bg-blue-800 text-white
+                            {% else %}bg-white hover:bg-blue-100{% endif %}"
+                            hx-post="{{ url_for('client.reservar', cancha=cancha.id, fecha=fecha_seleccionada) }}"
+                            hx-vals='{"hora": "{{ horario.start_time }}"}'
+                            hx-target="body"
+                            hx-swap="innerHTML">
+                            {{ horario.formatted_time }}
+                        </button>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <p class="text-gray-600 text-lg font-medium mb-2">
+                        No hay horarios disponibles
+                    </p>
+                    <p class="text-blue-600">
+                        Por favor selecciona otra fecha
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if horas_seleccionadas %}
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-blue-950 mb-2">
+                    Monto a pagar
+                </h3>
+                <div class="bg-blue-800 text-white text-center rounded-lg p-4 shadow">
+                    <p class="text-2xl font-bold">
+                        ${{ "%.2f"|format(monto_total) }}
+                    </p>
+                    <p class="text-sm">
+                        ({{ horas_seleccionadas|length }} hora{% if horas_seleccionadas|length != 1 %}s{% endif %} × ${{ "%.2f"|format(cancha.price_per_hour) }})
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if horas_seleccionadas %}
+        <div class="sticky bottom-0 bg-white border-t border-gray-200 py-4 px-6 shadow-lg">
+            <a href="{{ url_for('client.metodospago', cancha=cancha.id, fecha=fecha_seleccionada, horarios=horas_seleccionadas|join(','), montoTotal=monto_total) }}"
+               class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg transition-colors text-center block">
+                Continuar con el pago
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

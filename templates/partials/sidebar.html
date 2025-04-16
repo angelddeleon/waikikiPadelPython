@@ -1,0 +1,111 @@
+<!--wrapper-->
+<div class="wrapper">
+    <!--sidebar wrapper -->
+    <div class="sidebar-wrapper" data-simplebar="true">
+        <div class="sidebar-header">
+            <div>
+                <img src="{{ url_for('static', filename='assets/imagenes/Logo-Waikiki-NEGRO.png') }}" alt="logo" height="35em" padding="1em">
+            </div>
+            <div class="toggle-icon ms-auto" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-expanded="false">
+                <i class='bx bx-menu'></i>
+            </div>
+        </div>
+        <!--navigation-->
+        <ul class="metismenu collapse" id="sidebarMenu">
+            <!-- Reservaciones -->
+            <li style="background-color: {% if request.endpoint == 'main.crear_reservacion' or request.endpoint == 'main.listaReservas' %}#003366; color: white;{% endif %}">
+                <a href="javascript:;" class="has-arrow" style="color: {% if request.endpoint == 'main.crear_reservacion' or request.endpoint == 'main.listaReservas' %}white{% endif %}">
+                    <div class="parent-icon"><i class='bx bx-calendar-week'></i></div>
+                    <div class="menu-title">Reservaciones</div>
+                </a>
+                <ul>
+                    <li style="background-color: {% if request.endpoint == 'main.crear_reservacion' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.crear_reservacion') }}" style="color: {% if request.endpoint == 'main.crear_reservacion' %}white{% endif %};">Crear Reservacion</a>
+                    </li>
+                    <li style="background-color: {% if request.endpoint == 'main.listaReservas' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.listaReservas') }}" style="color: {% if request.endpoint == 'main.listaReservas' %}white{% endif %};">Lista Reservacion</a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Clases -->
+            <li style="background-color: {% if request.endpoint == 'main.crear_clase' or request.endpoint == 'main.clases' %}#003366; color: white;{% endif %}">
+                <a href="javascript:;" class="has-arrow" style="color: {% if request.endpoint == 'main.crear_clase' or request.endpoint == 'main.clases' %}white{% endif %}">
+                    <div class="parent-icon"><i class='bx bx-book-bookmark'></i></div>
+                    <div class="menu-title">Clases</div>
+                </a>
+                <ul>
+                    <li style="background-color: {% if request.endpoint == 'main.crear_clase' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.crear_clase') }}" style="color: {% if request.endpoint == 'main.crear_clase' %}white{% endif %};">Crear Clase</a>
+                    </li>
+                    <li style="background-color: {% if request.endpoint == 'main.clases' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.clases') }}" style="color: {% if request.endpoint == 'main.clases' %}white{% endif %};">Lista Clases</a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Pagos -->
+            <li style="background-color: {% if request.endpoint == 'main.pagos' %}#003366; color: white;{% endif %}">
+                <a href="javascript:;" class="has-arrow" style="color: {% if request.endpoint == 'main.pagos' %}white{% endif %}">
+                    <div class="parent-icon"><i class='bx bx-money'></i></div>
+                    <div class="menu-title">Pagos</div>
+                </a>
+                <ul>
+                    <li style="background-color: {% if request.endpoint == 'main.pagos' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.pagos') }}" style="color: {% if request.endpoint == 'main.pagos' %}white{% endif %};">Lista Pagos</a>
+                    </li>            
+                </ul>
+            </li>
+
+            <!-- Usuarios -->
+            <li style="background-color: {% if request.endpoint == 'main.listaUsuarios' %}#003366; color: white;{% endif %}">
+                <a href="javascript:;" class="has-arrow" style="color: {% if request.endpoint == 'main.listaUsuarios' %}white{% endif %}">
+                    <div class="parent-icon"><i class='bx bx-user'></i></div>
+                    <div class="menu-title">Usuarios</div>
+                </a>
+                <ul>
+                    <li style="background-color: {% if request.endpoint == 'main.listaUsuarios' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.listaUsuarios') }}" style="color: {% if request.endpoint == 'main.listaUsuarios' %}white{% endif %};">Lista de Usuarios</a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Configuración -->
+            <li style="background-color: {% if request.endpoint == 'main.tasa_bs' %}#003366; color: white;{% endif %}">
+                <a href="javascript:;" class="has-arrow" style="color: {% if request.endpoint == 'main.tasa_bs' %}white{% endif %}">
+                    <div class="parent-icon"><i class='bx bx-cog'></i></div>
+                    <div class="menu-title">Configuración</div>
+                </a>
+                <ul>
+                    <li style="background-color: {% if request.endpoint == 'main.tasa_bs' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.tasa_bs') }}" style="color: {% if request.endpoint == 'main.tasa_bs' %}white{% endif %};">Tasa</a>
+                    </li>
+                    <li style="background-color: {% if request.endpoint == 'main.logout' %}#336699; color: white;{% endif %}">
+                        <a href="{{ url_for('main.logout') }}" style="color: {% if request.endpoint == 'main.logout' %}white{% endif %};">Salir</a>
+                    </li>
+                </ul>
+            </li>
+
+        </ul>
+        <!--end navigation-->
+    </div>
+    <!--end sidebar wrapper -->
+
+    <!--start header -->
+    <header>
+        <div class="topbar d-flex align-items-center bg-dark shadow-none border-light-2 border-bottom">
+            <nav class="navbar navbar-expand">
+                <div class="mobile-toggle-menu text-white me-3" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-expanded="false"><i class='bx bx-menu'></i></div>
+                <div class="search-bar flex-grow-1">
+                    <div class="position-relative search-bar-box">
+                        <form>
+                            <input type="text" class="form-control search-control" autofocus placeholder="Type to search...">
+                        </form>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <!--end header -->
+</div>
+<!--end wrapper-->

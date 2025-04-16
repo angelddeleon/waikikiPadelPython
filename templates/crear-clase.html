@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{{ url_for('static', filename='assets/images/favicon-32x32.png') }}" type="image/png" />
+    <link href="{{ url_for('static', filename='assets/plugins/simplebar/css/simplebar.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='assets/plugins/perfect-scrollbar/css/perfect-scrollbar.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='assets/plugins/metismenu/css/metisMenu.min.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='assets/plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='assets/css/bootstrap-extended.css') }}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='assets/css/app.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='assets/css/icons.css') }}" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/imagenes/Logo-Waikiki-NEGRO.png') }}">
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/imagenes/Logo-Waikiki-NEGRO.png') }}">
+    <title>Waikiki</title>
+</head>
+
+<body class="bg-light">
+
+    {% include 'partials/sidebar.html' %}
+    
+    <div class="page-wrapper">
+        <div class="page-content">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0">Crear Nueva Clase</h4>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                {% if category == 'success' %}
+                                    Swal.fire({
+                                        title: '¡Éxito!',
+                                        text: '{{ message }}',
+                                        icon: 'success',
+                                        confirmButtonText: 'Aceptar'
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            window.location.href = "{{ url_for('main.clases') }}";
+                                        }
+                                    });
+                                {% elif category == 'error' %}
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: '{{ message }}',
+                                        icon: 'error',
+                                        confirmButtonText: 'Entendido'
+                                    });
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('main.crear_clase') }}" id="claseForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombre_profesor" class="form-label">Nombre del Profesor</label>
+                                <input type="text" class="form-control" id="nombre_profesor" name="nombre_profesor" required>
+                                <div class="invalid-feedback" id="errorNombre"></div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="cancha" class="form-label">Seleccionar Cancha</label>
+                                <select class="form-select" id="cancha" name="cancha" required>
+                                    <option value="">Seleccione una cancha</option>
+                                    {% for cancha in canchas %}
+                                        <option value="{{ cancha.id }}">{{ cancha.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback" id="errorCancha"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="fecha" class="form-label">Fecha</label>
+                                <input type="date" class="form-control" id="fecha" name="fecha" min="{{ min_date.strftime('%Y-%m-%d') }}" value="{{ min_date.strftime('%Y-%m-%d') }}" required>
+                                <div class="invalid-feedback" id="errorFecha"></div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="hora_inicio" class="form-label">Hora de Inicio</label>
+                                <select class="form-select" id="hora_inicio" name="hora_inicio" required>
+                                    <option value="">Seleccione hora</option>
+                                </select>
+                                <div class="invalid-feedback" id="errorHoraInicio"></div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="hora_final" class="form-label">Hora de Finalización</label>
+                                <select class="form-select" id="hora_final" name="hora_final" required>
+                                    <option value="">Seleccione hora</option>
+                                </select>
+                                <div class="invalid-feedback" id="errorHoraFinal"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary px-4" id="submitBtn">Crear Clase</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+                <!-- Bootstrap JS -->
+                <script src="{{ url_for('static', filename='assets/js/bootstrap.bundle.min.js') }}"></script>
+                <!--plugins-->
+                <script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+                <script src="{{ url_for('static', filename='assets/plugins/metismenu/js/metisMenu.min.js') }}"></script>
+                <script src="{{ url_for('static', filename='assets/plugins/perfect-scrollbar/js/perfect-scrollbar.js') }}"></script>
+                <script src="{{ url_for('static', filename='assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
+                <script src="{{ url_for('static', filename='assets/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
+                <script src="{{ url_for('static', filename='assets/js/app.js') }}"></script>
+                
+                <script>
+                    $(document).ready(function() {
+                        // Asegúrate de que el contenedor del sidebar esté presente
+                        var sidebarWrapper = document.querySelector('.sidebar-wrapper');
+                        
+                        if (sidebarWrapper) {
+                            // Inicializa PerfectScrollbar solo si el contenedor existe
+                            new PerfectScrollbar(sidebarWrapper);
+                        }
+            
+                        // Inicializa MetisMenu para el comportamiento del menú desplegable
+                        $('#sidebarMenu').metisMenu();
+                    });
+                </script>
+    
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Verificar si hay un mensaje de éxito para mostrar el popup
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {% if category == 'success' %}
+                            Swal.fire({
+                                title: '¡Clase creada con éxito!',
+                                text: '{{ message }}',
+                                icon: 'success',
+                                confirmButtonText: 'Aceptar',
+                                timer: 3000,
+                                timerProgressBar: true,
+                                willClose: () => {
+                                    window.location.href = "{{ url_for('main.clases') }}";
+                                }
+                            });
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            // Función para convertir hora en formato de 24 horas a 12 horas con AM/PM
+            function convertirHoraAMPM(hora24) {
+                var [horas, minutos] = hora24.split(':');
+                horas = parseInt(horas);
+                var suffix = horas >= 12 ? 'PM' : 'AM';
+                horas = horas % 12;
+                horas = horas ? horas : 12; // Convertir 0 a 12
+                return horas + ':' + minutos + ' ' + suffix;
+            }
+
+            // Función para obtener la hora siguiente
+            function getHoraSiguiente(hora) {
+                var [horas, minutos, segundos] = hora.split(':');
+                horas = parseInt(horas);
+                minutos = parseInt(minutos);
+                
+                var siguienteHora = horas + 1;
+                if (siguienteHora >= 24) {
+                    siguienteHora = 0;
+                }
+                
+                return siguienteHora.toString().padStart(2, '0') + ':' + 
+                       minutos.toString().padStart(2, '0') + ':' + 
+                       segundos;
+            }
+
+            // Función que se ejecuta cuando cambia el valor del campo 'cancha' o 'fecha'
+            $('#cancha, #fecha').change(function() {
+                var cancha_id = $('#cancha').val();
+                var fecha = $('#fecha').val();
+
+                if (cancha_id && fecha) {
+                    $.ajax({
+                        url: '/obtener_horas_disponibles',
+                        method: 'GET',
+                        data: { cancha_id: cancha_id, fecha: fecha },
+                        success: function(response) {
+                            // Limpiar el select de horas inicio
+                            $('#hora_inicio').empty();
+                            $('#hora_inicio').append('<option value="">Seleccione hora</option>');
+
+                            // Recorrer las horas disponibles y agregarlas al select
+                            response.forEach(function(hora) {
+                                var horaFormatoAMPM = convertirHoraAMPM(hora.start_time);
+                                $('#hora_inicio').append('<option value="' + hora.start_time + '">' + horaFormatoAMPM + '</option>');
+                            });
+                            
+                            // Limpiar hora final
+                            $('#hora_final').empty().append('<option value="">Seleccione hora</option>');
+                        },
+                        error: function() {
+                            alert('Error al obtener las horas disponibles');
+                        }
+                    });
+                }
+            });
+
+            // Función que se ejecuta cuando cambia la hora de inicio
+            $('#hora_inicio').change(function() {
+                var hora_inicio = $(this).val();
+                if (hora_inicio) {
+                    $.ajax({
+                        url: '/obtener_horas_disponibles',
+                        method: 'GET',
+                        data: { 
+                            cancha_id: $('#cancha').val(), 
+                            fecha: $('#fecha').val(),
+                            hora_inicio: hora_inicio
+                        },
+                        success: function(response) {
+                            // Limpiar el select de horas final
+                            $('#hora_final').empty();
+                            $('#hora_final').append('<option value="">Seleccione hora</option>');
+
+                            // Calcular la hora siguiente (1 hora después de la hora de inicio)
+                            var horaSiguiente = getHoraSiguiente(hora_inicio);
+                            
+                            // Verificar si la hora siguiente ya existe en las horas disponibles
+                            var horaSiguienteExiste = response.some(function(hora) {
+                                return hora.start_time === horaSiguiente;
+                            });
+
+                            // Si no existe, agregarla como opción
+                            if (!horaSiguienteExiste) {
+                                var horaSiguienteAMPM = convertirHoraAMPM(horaSiguiente);
+                                $('#hora_final').append('<option value="' + horaSiguiente + '">' + horaSiguienteAMPM + '</option>');
+                            }
+
+                            // Convertir la hora de inicio a objeto Date para comparación
+                            var [horaInicioH, horaInicioM] = hora_inicio.split(':').map(Number);
+                            var horaInicioDate = new Date();
+                            horaInicioDate.setHours(horaInicioH, horaInicioM, 0);
+
+                            // Procesar las horas disponibles del servidor
+                            response.forEach(function(hora) {
+                                // Convertir hora.start_time a objeto Date
+                                var [horaH, horaM] = hora.start_time.split(':').map(Number);
+                                var horaDate = new Date();
+                                horaDate.setHours(horaH, horaM, 0);
+
+                                // Solo agregar horas mayores a la hora de inicio
+                                if (horaDate > horaInicioDate) {
+                                    var horaFormatoAMPM = convertirHoraAMPM(hora.start_time);
+                                    $('#hora_final').append('<option value="' + hora.start_time + '">' + horaFormatoAMPM + '</option>');
+                                }
+                            });
+                        },
+                        error: function() {
+                            alert('Error al obtener las horas disponibles');
+                        }
+                    });
+                } else {
+                    $('#hora_final').empty().append('<option value="">Seleccione hora</option>');
+                }
+            });
+
+            // Validación en tiempo real del nombre del profesor
+            $('#nombre_profesor').on('input', function() {
+                if ($(this).val().trim().length < 3) {
+                    $(this).addClass('is-invalid');
+                    $('#errorNombre').text('El nombre debe tener al menos 3 caracteres');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $('#errorNombre').text('');
+                }
+            });
+
+            // Validación en tiempo real de la cancha
+            $('#cancha').change(function() {
+                if ($(this).val() === "") {
+                    $(this).addClass('is-invalid');
+                    $('#errorCancha').text('Debe seleccionar una cancha');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $('#errorCancha').text('');
+                }
+            });
+
+            // Validación en tiempo real de la fecha
+            $('#fecha').change(function() {
+                if ($(this).val() === "") {
+                    $(this).addClass('is-invalid');
+                    $('#errorFecha').text('Debe seleccionar una fecha');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $('#errorFecha').text('');
+                }
+            });
+
+            // Validación en tiempo real de la hora de inicio
+            $('#hora_inicio').change(function() {
+                if ($(this).val() === "") {
+                    $(this).addClass('is-invalid');
+                    $('#errorHoraInicio').text('Debe seleccionar una hora de inicio');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $('#errorHoraInicio').text('');
+                }
+            });
+
+            // Validación en tiempo real de la hora final
+            $('#hora_final').change(function() {
+                var hora_inicio = $('#hora_inicio').val();
+                var hora_final = $(this).val();
+                
+                if (hora_final === "") {
+                    $(this).addClass('is-invalid');
+                    $('#errorHoraFinal').text('Debe seleccionar una hora de finalización');
+                } else if (hora_inicio && hora_final <= hora_inicio) {
+                    $(this).addClass('is-invalid');
+                    $('#errorHoraFinal').text('La hora final debe ser mayor que la hora de inicio');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $('#errorHoraFinal').text('');
+                }
+            });
+
+            // Validación del formulario antes de enviar
+            $('#claseForm').on('submit', function(e) {
+                var isValid = true;
+                var nombre_profesor = $('#nombre_profesor').val().trim();
+                var cancha = $('#cancha').val();
+                var fecha = $('#fecha').val();
+                var hora_inicio = $('#hora_inicio').val();
+                var hora_final = $('#hora_final').val();
+                
+                // Validar nombre del profesor
+                if (nombre_profesor.length < 3) {
+                    $('#nombre_profesor').addClass('is-invalid');
+                    $('#errorNombre').text('El nombre debe tener al menos 3 caracteres');
+                    isValid = false;
+                }
+                
+                // Validar cancha
+                if (!cancha) {
+                    $('#cancha').addClass('is-invalid');
+                    $('#errorCancha').text('Debe seleccionar una cancha');
+                    isValid = false;
+                }
+                
+                // Validar fecha
+                if (!fecha) {
+                    $('#fecha').addClass('is-invalid');
+                    $('#errorFecha').text('Debe seleccionar una fecha');
+                    isValid = false;
+                }
+                
+                // Validar hora de inicio
+                if (!hora_inicio) {
+                    $('#hora_inicio').addClass('is-invalid');
+                    $('#errorHoraInicio').text('Debe seleccionar una hora de inicio');
+                    isValid = false;
+                }
+                
+                // Validar hora final
+                if (!hora_final) {
+                    $('#hora_final').addClass('is-invalid');
+                    $('#errorHoraFinal').text('Debe seleccionar una hora de finalización');
+                    isValid = false;
+                } else if (hora_inicio && hora_final <= hora_inicio) {
+                    $('#hora_final').addClass('is-invalid');
+                    $('#errorHoraFinal').text('La hora final debe ser mayor que la hora de inicio');
+                    isValid = false;
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Por favor complete todos los campos correctamente',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return false;
+                }
+                
+                // Deshabilitar el botón para evitar múltiples envíos
+                $('#submitBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...');
+                
+                return true;
+            });
+        });
+    </script>
+</body>
+</html>

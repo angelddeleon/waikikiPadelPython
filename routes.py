@@ -302,12 +302,14 @@ def metodospago():
 @login_required
 def procesar_reserva():
     try:
+        # Obtener datos del formulario
         cancha_id = request.form.get('cancha_id')
         fecha = request.form.get('fecha')
         horarios = request.form.get('horarios').split(',')
-        metodo_pago = request.form.get('metodo_pago')
+        metodo_pago = request.form.get('metodo_pago')  # Asegúrate que coincida con el name del input
         monto_total = float(request.form.get('monto_total'))
 
+        # Procesar comprobante de pago si existe
         comprobante = None
         if 'comprobante' in request.files:
             file = request.files['comprobante']
@@ -317,6 +319,7 @@ def procesar_reserva():
                 file.save(filepath)
                 comprobante = filename
 
+        # Crear registro de pago
         pago = Pago(
             user_id=current_user.id,
             amount=monto_total,
@@ -329,6 +332,7 @@ def procesar_reserva():
         db.session.add(pago)
         db.session.flush()
 
+        # Crear horarios y reservaciones
         for hora in horarios:
             if not hora:
                 continue
@@ -336,6 +340,7 @@ def procesar_reserva():
             hora_inicio = datetime.strptime(hora, '%H:%M:%S').time()
             hora_fin = (datetime.combine(datetime.min, hora_inicio) + timedelta(hours=1)).time()
 
+            # Registrar horario
             horario = Horario(
                 cancha_id=cancha_id,
                 date=datetime.strptime(fecha, '%Y-%m-%d').date(),
@@ -346,6 +351,7 @@ def procesar_reserva():
             db.session.add(horario)
             db.session.flush()
 
+            # Crear reservación
             reservacion = Reservacion(
                 user_id=current_user.id,
                 horario_id=horario.id,
@@ -355,20 +361,13 @@ def procesar_reserva():
             db.session.add(reservacion)
 
         db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Reserva realizada con éxito',
-            'redirect': url_for('client.principal')
-        })
+        flash('✅ Reserva realizada con éxito', 'success')
+        return redirect(url_for('client.principal'))
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
-
+        flash(f'❌ Error al procesar la reserva: {str(e)}', 'error')
+        return redirect(request.referrer or url_for('client.principal'))
 
 @client_bp.route('/perfil')
 @login_required

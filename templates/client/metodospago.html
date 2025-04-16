@@ -2,6 +2,17 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
+    <!-- Mostrar mensajes flash aquí -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
         <div class="p-6 bg-blue-50 border-b border-gray-200">
             <h1 class="text-2xl font-bold text-blue-900">Confirmar Reserva</h1>
@@ -14,7 +25,7 @@
                 <p class="text-gray-600">Fecha: {{ fecha }}</p>
             </div>
 
-            <!-- Horarios -->
+            <!-- Horarios seleccionados -->
             <div class="mb-6">
                 <h3 class="text-lg font-semibold mb-3">Horarios seleccionados:</h3>
                 {% for horario in horarios %}
@@ -24,7 +35,7 @@
                 {% endfor %}
             </div>
 
-            <!-- Métodos de pago -->
+            <!-- Formulario de pago -->
             <div class="mb-6">
                 <h3 class="text-lg font-semibold mb-3">Método de Pago</h3>
                 
@@ -34,16 +45,17 @@
                     <input type="hidden" name="horarios" value="{{ horarios|map(attribute='inicio_24h')|join(',') }}">
                     <input type="hidden" name="monto_total" value="{{ monto_total }}">
                     
+                    <!-- Opciones de pago -->
                     {% for metodo, detalles in metodos_pago.items() %}
-                        <div class="p-4 mb-3 border rounded-lg cursor-pointer 
-                                    {% if request.form.get('metodo_pago') == metodo %}border-blue-500 bg-blue-50{% else %}border-gray-300{% endif %}">
+                        <div class="p-4 mb-3 border rounded-lg cursor-pointer {% if request.form.get('metodo_pago') == metodo %}border-blue-500 bg-blue-50{% else %}border-gray-300{% endif %}">
                             <div class="flex justify-between items-center">
                                 <h4 class="font-medium">{{ metodo }}</h4>
                                 <input type="radio" 
                                        name="metodo_pago" 
                                        value="{{ metodo }}"
                                        {% if request.form.get('metodo_pago') == metodo %}checked{% endif %}
-                                       class="h-4 w-4 text-blue-600">
+                                       class="h-4 w-4 text-blue-600"
+                                       required>
                             </div>
 
                             {% if detalles.requiere_comprobante %}
@@ -65,15 +77,15 @@
                         </div>
                     {% endfor %}
 
-                    <!-- Total -->
+                    <!-- Total a pagar -->
                     <div class="mb-6 p-4 bg-blue-50 rounded-lg">
                         <h3 class="font-semibold">Total a pagar:</h3>
                         <p class="text-2xl font-bold">${{ "%.2f"|format(monto_total) }}</p>
                     </div>
 
-                    <!-- Botón -->
+                    <!-- Botón de confirmación -->
                     <button type="submit"
-                            class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold">
+                            class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition duration-300">
                         Confirmar Reserva
                     </button>
                 </form>

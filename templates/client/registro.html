@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Waikiki Padel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex flex-col justify-center items-center">
+        <img src="{{ url_for('static', filename='images/Logo-Waikiki-NEGRO.png') }}" alt="Logo Waikiki" class="h-25 mb-8">
+
+        <form method="POST" action="{{ url_for('auth.registro') }}" class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+            {{ form.hidden_tag() }}
+
+            <!-- Mensajes de error generales -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
+                            <p class="text-sm">{{ message }}</p>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Nombre -->
+            <div class="mb-4">
+                <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+                {{ form.nombre(class="mt-1 block w-full p-2 border rounded-md" + (" border-red-500" if form.nombre.errors else " border-gray-300")) }}
+                {% for error in form.nombre.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <!-- Teléfono y código de país -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Número de teléfono</label>
+                <div class="flex items-center">
+                    {{ form.codigo_pais(class="w-1/3 select2" + (" border-red-500" if form.codigo_pais.errors else "")) }}
+                    {{ form.telefono(class="mt-1 block w-full p-2 border rounded-md ml-2" + (" border-red-500" if form.telefono.errors else " border-gray-300"), placeholder="Número de teléfono") }}
+                </div>
+                {% for error in form.codigo_pais.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+                {% for error in form.telefono.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <!-- Email -->
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+                {{ form.email(class="mt-1 block w-full p-2 border rounded-md" + (" border-red-500" if form.email.errors else " border-gray-300")) }}
+                {% for error in form.email.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <!-- Contraseña -->
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+                {{ form.password(class="mt-1 block w-full p-2 border rounded-md" + (" border-red-500" if form.password.errors else " border-gray-300")) }}
+                {% for error in form.password.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <!-- Enlace a login -->
+            <a href="{{ url_for('auth.login') }}" class="text-blue-600 underline mb-4 text-sm block">¿Tienes una cuenta? Inicia sesión</a>
+
+            <!-- Botón de registro -->
+            <button type="submit" class="rounded-lg py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full">
+                {% if loading %}
+                    <span class="flex items-center justify-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Procesando...
+                    </span>
+                {% else %}
+                    Registrarse
+                {% endif %}
+            </button>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                placeholder: "Código de país",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
+</body>
+</html>

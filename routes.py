@@ -5,6 +5,9 @@ import pytz
 from flask_login import login_required, login_user, logout_user, current_user
 import os
 from werkzeug.utils import secure_filename
+from forms import RegistroForm
+import requests
+from werkzeug.security import generate_password_hash  # También necesitas esta importación
 
 # Blueprint para las rutas del cliente y autenticación
 client_bp = Blueprint('client', __name__, url_prefix='/')
@@ -74,6 +77,65 @@ def obtener_horas_disponibles(cancha_id, fecha):
         print(f"Error al obtener horarios disponibles: {e}")
         return None
 
+@auth_bp.route('/registro', methods=['GET', 'POST'])
+def registro():
+    form = RegistroForm()
+    
+    if not form.codigo_pais.choices or len(form.codigo_pais.choices) <= 1:
+        try:
+            response = requests.get('https://restcountries.com/v3.1/all?fields=name,idd')
+            if response.status_code == 200:
+                countries = response.json()
+                country_list = [('', 'Selecciona tu país')]  # Opción por defecto
+                
+                for country in sorted(countries, key=lambda x: x['name']['common']):
+                    name = country['name']['common']
+                    idd = country.get('idd', {})
+                    
+                    if idd and idd.get('root') and idd.get('suffixes'):
+                        root = idd['root'].strip()
+                        suffix = idd['suffixes'][0] if idd['suffixes'] else ''
+                        code = f"{root}{suffix}"
+                        country_list.append((code, f"{code} - {name}"))
+                
+                form.codigo_pais.choices = country_list
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener países: {str(e)}")
+            # Opciones por defecto si falla la API
+            form.codigo_pais.choices = [
+                ('', 'Selecciona tu país'),
+                ('+58', '+58 - Venezuela'),
+                ('+1', '+1 - USA/Canada'),
+                ('+34', '+34 - España')
+            ]
+            flash("Error al cargar los códigos de país. Usando lista básica.", "error")
+
+    if form.validate_on_submit():
+        try:
+            nuevo_usuario = Usuario(
+                nombre=form.nombre.data,
+                email=form.email.data,
+                telefono=form.telefono.data,
+                codigoPais=form.codigo_pais.data,
+                password=generate_password_hash(form.password.data),
+                role='usuario',
+                isBlocked=False,
+                perfil='default.png'
+            )
+            
+            db.session.add(nuevo_usuario)
+            db.session.commit()
+            
+            flash("Registro exitoso. Por favor inicia sesión.", "success")
+            return redirect(url_for('client.login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error en registro: {str(e)}")
+            flash("Ocurrió un error al registrar. Por favor, inténtalo de nuevo.", "error")
+
+    return render_template('auth/registro.html', form=form)
+
 @client_bp.route('/', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -93,7 +155,7 @@ def login():
 
                     login_user(usuario)
                     flash('Inicio de sesión exitoso', 'success')
-                    if usuario.role == 'admin':
+                    if usuario.role == 'usuario':
                         return redirect(url_for('client.principal'))
                     else:
                         flash('No tienes acceso de administrador', 'danger')
@@ -107,7 +169,6 @@ def login():
         flash('Ocurrió un error inesperado. Por favor, inténtalo de nuevo más tarde.', 'danger')
 
     return render_template('login.html')
-
 
 @client_bp.route('/logout')
 def logout():
@@ -380,3 +441,4 @@ def procesar_reserva():
 @login_required
 def perfil():
     return render_template('client/perfil.html')
+

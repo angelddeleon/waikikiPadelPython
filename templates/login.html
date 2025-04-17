@@ -91,6 +91,12 @@
                     </div>
                 </form>
 
+                <div class="mt-4 text-center">
+                    <a href="{{ url_for('auth.registro') }}" class="text-blue-600 hover:text-blue-800 text-sm">
+                        ¿No tienes una cuenta? Registro
+                    </a>
+                </div>
+
                                 <!-- Mostrar errores -->
                                 <div class="alert alert-danger" style="margin-top: 1em; display: {% if get_flashed_messages() %}block{% else %}none{% endif %};">
                                     {% with messages = get_flashed_messages(with_categories=true) %}

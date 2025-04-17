@@ -10,6 +10,7 @@ from datetime import datetime
 
 # Inicializar la aplicación Flask
 app = Flask(__name__)
+application = app
 
 # Añade este filtro personalizado
 @app.template_filter('format_hora')

@@ -255,7 +255,6 @@ def mis_reservas():
     except Exception as e:
         return render_template('client/mis_reservas.html', error=str(e))
 
-
 @client_bp.route('/reservar', methods=['GET', 'POST'])
 @login_required
 def reservar():
@@ -278,20 +277,20 @@ def reservar():
         if horarios_disponibles and horarios_disponibles[0].date != fecha_obj:
             nueva_fecha = horarios_disponibles[0].date.strftime('%Y-%m-%d')
             flash(f'No hay horarios disponibles para la fecha seleccionada. Mostrando horarios para {nueva_fecha}', 'info')
-            
-            # Redirigir con la nueva fecha y sin horas seleccionadas
             return redirect(url_for('client.reservar', 
                                 cancha=cancha.id,
-                                fecha=nueva_fecha,
-                                hora=None,  # Aseguramos que no haya hora seleccionada
-                                horas_seleccionadas=''))  # Aseguramos que las horas seleccionadas estén vacías
+                                fecha=nueva_fecha))
 
         # Procesar horas seleccionadas
         horas_seleccionadas = request.args.get('horas_seleccionadas', '')
         horas_seleccionadas = [h for h in horas_seleccionadas.split(',') if h]
         
-        if hora and hora not in horas_seleccionadas:
-            horas_seleccionadas.append(hora)
+        # Manejar selección/deselección de hora
+        if hora:
+            if hora in horas_seleccionadas:
+                horas_seleccionadas.remove(hora)  # Deseleccionar si ya está seleccionada
+            else:
+                horas_seleccionadas.append(hora)  # Seleccionar si no está seleccionada
 
         # Validar fecha
         fecha_error = ""
@@ -305,27 +304,28 @@ def reservar():
         # Manejar POST (selección de hora)
         if request.method == 'POST' and 'hora' in request.form:
             nueva_hora = request.form['hora']
-            if nueva_hora not in horas_seleccionadas:
+            if nueva_hora in horas_seleccionadas:
+                horas_seleccionadas.remove(nueva_hora)
+            else:
                 horas_seleccionadas.append(nueva_hora)
             return redirect(url_for('client.reservar',
-                                    cancha=cancha.id,
-                                    fecha=fecha,
-                                    horas_seleccionadas=','.join(horas_seleccionadas)))
+                                cancha=cancha.id,
+                                fecha=fecha,
+                                horas_seleccionadas=','.join(horas_seleccionadas)))
 
         return render_template('client/reservar.html',
-                               cancha=cancha,
-                               fecha_seleccionada=fecha,
-                               horas_seleccionadas=horas_seleccionadas,
-                               horarios=horarios_disponibles,
-                               error_fecha=fecha_error,
-                               monto_total=monto_total,
-                               fecha_actual=dia_actual.strftime('%Y-%m-%d'))
+                           cancha=cancha,
+                           fecha_seleccionada=fecha,
+                           horas_seleccionadas=horas_seleccionadas,
+                           horarios=horarios_disponibles,
+                           error_fecha=fecha_error,
+                           monto_total=monto_total,
+                           fecha_actual=dia_actual.strftime('%Y-%m-%d'))
 
     except Exception as e:
         current_app.logger.error(f"Error en reservar: {str(e)}")
         flash('Ocurrió un error al cargar la página de reserva', 'error')
         return redirect(url_for('client.principal'))
-
 
 @client_bp.route('/metodospago')
 @login_required

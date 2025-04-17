@@ -274,16 +274,17 @@ def reservar():
 
         # Obtener horarios disponibles (puede devolver horarios del día siguiente)
         horarios_disponibles = obtener_horas_disponibles(cancha.id, fecha)
-        
-        # Si se cambiaron al día siguiente, actualizamos la fecha
+
         if horarios_disponibles and horarios_disponibles[0].date != fecha_obj:
             nueva_fecha = horarios_disponibles[0].date.strftime('%Y-%m-%d')
             flash(f'No hay horarios disponibles para la fecha seleccionada. Mostrando horarios para {nueva_fecha}', 'info')
+            
+            # Redirigir con la nueva fecha y sin horas seleccionadas
             return redirect(url_for('client.reservar', 
-                                 cancha=cancha.id,
-                                 fecha=nueva_fecha,
-                                 hora=hora,
-                                 horas_seleccionadas=request.args.get('horas_seleccionadas', '')))
+                                cancha=cancha.id,
+                                fecha=nueva_fecha,
+                                hora=None,  # Aseguramos que no haya hora seleccionada
+                                horas_seleccionadas=''))  # Aseguramos que las horas seleccionadas estén vacías
 
         # Procesar horas seleccionadas
         horas_seleccionadas = request.args.get('horas_seleccionadas', '')
@@ -307,18 +308,18 @@ def reservar():
             if nueva_hora not in horas_seleccionadas:
                 horas_seleccionadas.append(nueva_hora)
             return redirect(url_for('client.reservar',
-                                cancha=cancha.id,
-                                fecha=fecha,
-                                horas_seleccionadas=','.join(horas_seleccionadas)))
+                                    cancha=cancha.id,
+                                    fecha=fecha,
+                                    horas_seleccionadas=','.join(horas_seleccionadas)))
 
         return render_template('client/reservar.html',
-                           cancha=cancha,
-                           fecha_seleccionada=fecha,
-                           horas_seleccionadas=horas_seleccionadas,
-                           horarios=horarios_disponibles,
-                           error_fecha=fecha_error,
-                           monto_total=monto_total,
-                           fecha_actual=dia_actual.strftime('%Y-%m-%d'))
+                               cancha=cancha,
+                               fecha_seleccionada=fecha,
+                               horas_seleccionadas=horas_seleccionadas,
+                               horarios=horarios_disponibles,
+                               error_fecha=fecha_error,
+                               monto_total=monto_total,
+                               fecha_actual=dia_actual.strftime('%Y-%m-%d'))
 
     except Exception as e:
         current_app.logger.error(f"Error en reservar: {str(e)}")

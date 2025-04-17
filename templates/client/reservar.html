@@ -23,7 +23,7 @@
                    min="{{ fecha_actual }}"
                    class="border p-2 rounded shadow"
                    name="fecha"
-                   onchange="window.location.href='{{ url_for('client.reservar', cancha=cancha.id) }}&fecha='+this.value+'&horas_seleccionadas={{ horas_seleccionadas|join(',') }}'">
+                   onchange="window.location.href='{{ url_for('client.reservar', cancha=cancha.id) }}&fecha='+this.value">
         </div>
 
         {% if error_fecha %}

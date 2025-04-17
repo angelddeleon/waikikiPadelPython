@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, current_app, send_from_directory
 from models import db, Cancha, Horario, Reservacion, Usuario, Pago
 from datetime import datetime, time, timedelta
 import pytz
@@ -8,14 +8,12 @@ from werkzeug.utils import secure_filename
 from forms import RegistroForm
 import requests
 from werkzeug.security import generate_password_hash  # También necesitas esta importación
+from flask_cors import cross_origin
 
 # Blueprint para las rutas del cliente y autenticación
 client_bp = Blueprint('client', __name__, url_prefix='/')
 auth_bp = Blueprint('auth', __name__)
 
-# Configuración para las subidas de archivos
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
 
 # Funciones de utilidad
 def allowed_file(filename):
@@ -352,17 +350,30 @@ def metodospago():
             hora_fin = (datetime.combine(datetime.min, hora_inicio) + timedelta(hours=1)).time()
             
             horarios_formateados.append({
-                'inicio_24h': hora_inicio.strftime('%H:%M:%S'),  # Para guardar en BD
-                'fin_24h': hora_fin.strftime('%H:%M:%S'),        # Para guardar en BD
-                'inicio': hora_inicio.strftime('%I:%M %p').lstrip('0').lower(),  # Para mostrar
-                'fin': hora_fin.strftime('%I:%M %p').lstrip('0').lower()         # Para mostrar
+                'inicio_24h': hora_inicio.strftime('%H:%M:%S'),
+                'fin_24h': hora_fin.strftime('%H:%M:%S'),
+                'inicio': hora_inicio.strftime('%I:%M %p').lstrip('0').lower(),
+                'fin': hora_fin.strftime('%I:%M %p').lstrip('0').lower()
             })
 
-        # Métodos de pago disponibles
+        # Métodos de pago disponibles con información detallada
         metodos_pago = {
-            "Pago Móvil": {"requiere_comprobante": True},
-            "Zelle": {"requiere_comprobante": True},
-            "Efectivo": {"requiere_comprobante": False}
+            "Pago Móvil": {
+                "requiere_comprobante": True,
+                "banco": "Banco de Venezuela",
+                "cedula": "12345678",
+                "telefono": "04141234567",
+                "descripcion": "Realiza el pago móvil a nuestro número y sube el comprobante"
+            },
+            "Zelle": {
+                "requiere_comprobante": True,
+                "correo": "pagos@waikikipadel.com",
+                "descripcion": "Envía el pago a nuestro correo y sube el comprobante"
+            },
+            "Efectivo": {
+                "requiere_comprobante": False,
+                "descripcion": "Paga directamente en caja al llegar al establecimiento"
+            }
         }
 
         return render_template('client/metodospago.html',
@@ -377,6 +388,17 @@ def metodospago():
         flash('Ocurrió un error al procesar el pago', 'error')
         return redirect(url_for('client.principal'))
 
+# Configuración para subir archivos
+UPLOAD_FOLDER = 'uploads/comprobante'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+
+# Asegúrate de que la carpeta de uploads exista
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @client_bp.route('/procesar_reserva', methods=['POST'])
 @login_required
 def procesar_reserva():
@@ -385,18 +407,39 @@ def procesar_reserva():
         cancha_id = request.form.get('cancha_id')
         fecha = request.form.get('fecha')
         horarios = request.form.get('horarios').split(',')
-        metodo_pago = request.form.get('metodo_pago')  # Asegúrate que coincida con el name del input
+        metodo_pago = request.form.get('metodo_pago')
         monto_total = float(request.form.get('monto_total'))
 
-        # Procesar comprobante de pago si existe
+        # Validar datos requeridos
+        if not all([cancha_id, fecha, horarios, metodo_pago]):
+            flash('Faltan datos requeridos para la reserva', 'error')
+            return redirect(request.referrer)
+
+        # Verificar si el método de pago requiere comprobante
+        metodos_con_comprobante = ['Pago Móvil', 'Zelle']
+        requiere_comprobante = metodo_pago in metodos_con_comprobante
+
+        # Procesar comprobante de pago si es requerido
         comprobante = None
-        if 'comprobante' in request.files:
+        if requiere_comprobante:
+            if 'comprobante' not in request.files:
+                flash('Debe subir un comprobante de pago para este método', 'error')
+                return redirect(request.referrer)
+            
             file = request.files['comprobante']
+            if file.filename == '':
+                flash('No se seleccionó ningún archivo', 'error')
+                return redirect(request.referrer)
+            
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
+                # Generar un nombre único para el archivo
+                filename = secure_filename(f"{current_user.id}_{datetime.now().timestamp()}.{file.filename.rsplit('.', 1)[1].lower()}")
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(filepath)
                 comprobante = filename
+            else:
+                flash('Formato de archivo no permitido. Use imágenes (PNG, JPG, JPEG, GIF) o PDF', 'error')
+                return redirect(request.referrer)
 
         # Crear registro de pago
         pago = Pago(
@@ -445,6 +488,7 @@ def procesar_reserva():
 
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Error al procesar reserva: {str(e)}", exc_info=True)
         flash(f'❌ Error al procesar la reserva: {str(e)}', 'error')
         return redirect(request.referrer or url_for('client.principal'))
 
@@ -477,3 +521,18 @@ def canchas():
 
     except Exception as e:
         return render_template('client/canchas.html', error=str(e))
+
+
+
+@client_bp.route('/uploads/comprobante/<filename>')
+@cross_origin()  # Esto permite el acceso desde otros dominios
+def serve_comprobante(filename):
+    # Validación de seguridad
+    if '../' in filename or not os.path.isfile(os.path.join(UPLOAD_FOLDER, filename)):
+        abort(404)
+    
+    # Opcional: Verificar permisos del usuario
+    # if not current_user.is_authenticated:
+    #     abort(403)
+    
+    return send_from_directory(UPLOAD_FOLDER, filename)

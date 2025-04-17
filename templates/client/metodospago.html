@@ -50,16 +50,34 @@
                                     <p class="text-sm text-gray-600">{{ detalles.descripcion }}</p>
                                 </div>
                                 <input type="radio" name="metodo_pago" value="{{ metodo }}"
-                                       id="metodo_{{ loop.index }}" class="hidden">
+                                       id="metodo_{{ loop.index }}" class="hidden" required>
                             </div>
 
-                            {% if detalles.requiere_comprobante %}
-                                <div id="comprobante_{{ metodo|replace(' ', '_') }}" class="mt-3 hidden">
+                            <div id="detalles_{{ metodo|replace(' ', '_') }}" class="mt-3 hidden">
+                                {% if metodo == 'Pago Móvil' or metodo == 'Zelle' %}
+                                <div class="bg-blue-50 p-3 rounded-md mb-3">
+                                    <h5 class="font-semibold mb-2">Datos para el pago:</h5>
+                                    {% if metodo == 'Pago Móvil' %}
+                                    <p class="text-sm"><strong>Banco:</strong> {{ detalles.banco }}</p>
+                                    <p class="text-sm"><strong>Cédula:</strong> {{ detalles.cedula }}</p>
+                                    <p class="text-sm"><strong>Teléfono:</strong> {{ detalles.telefono }}</p>
+                                    {% else %}
+                                    <p class="text-sm"><strong>Correo:</strong> {{ detalles.correo }}</p>
+                                    <p class="text-sm"><strong>Banco:</strong> {{ detalles.banco }}</p>
+                                    {% endif %}
+                                    <p class="text-sm"><strong>Titular:</strong> {{ detalles.titular }}</p>
+                                    
+
+                                </div>
+                                {% endif %}
+
+                                {% if detalles.requiere_comprobante %}
+                                <div class="mt-3">
                                     <label class="block text-sm font-medium mb-1">
                                         Subir comprobante (imagen o PDF):
                                     </label>
                                     <input type="file" name="comprobante_{{ metodo|replace(' ', '_') }}"
-                                           class="block w-full text-sm text-gray-500
+                                           class="comprobante-file block w-full text-sm text-gray-500
                                                  file:mr-4 file:py-2 file:px-4
                                                  file:rounded-md file:border-0
                                                  file:text-sm file:font-semibold
@@ -67,7 +85,8 @@
                                                  hover:file:bg-blue-100"
                                            accept="image/*,.pdf">
                                 </div>
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </div>
                     {% endfor %}
 
@@ -86,42 +105,93 @@
 </div>
 
 <script>
+    let metodoSeleccionadoActual = null;
+
     function selectMetodoPago(metodo) {
-        // Resetear estilos de todos los métodos
+        // Limpiar archivos de métodos no seleccionados
+        if (metodoSeleccionadoActual && metodoSeleccionadoActual !== metodo) {
+            const inputsArchivos = document.querySelectorAll('.comprobante-file');
+            inputsArchivos.forEach(input => {
+                if (!input.closest(`#detalles_${metodo.replace(' ', '_')}`)) {
+                    input.value = '';
+                }
+            });
+        }
+
+        // Actualizar selección visual
         document.querySelectorAll('.metodo-pago-option').forEach(el => {
             el.classList.remove('border-blue-500', 'bg-blue-50');
         });
         
-        // Marcar el método seleccionado
         const selectedOption = document.querySelector(`input[value="${metodo}"]`).parentElement.parentElement;
         selectedOption.classList.add('border-blue-500', 'bg-blue-50');
         document.querySelector(`input[value="${metodo}"]`).checked = true;
+        metodoSeleccionadoActual = metodo;
         
-        // Ocultar todos los inputs de comprobante
-        document.querySelectorAll('[id^="comprobante_"]').forEach(el => {
+        // Mostrar solo los detalles del método seleccionado
+        document.querySelectorAll('[id^="detalles_"]').forEach(el => {
             el.classList.add('hidden');
         });
         
-        // Mostrar solo el del método seleccionado
-        const comprobanteDiv = document.getElementById(`comprobante_${metodo.replace(' ', '_')}`);
-        if (comprobanteDiv) {
-            comprobanteDiv.classList.remove('hidden');
+        const detallesDiv = document.getElementById(`detalles_${metodo.replace(' ', '_')}`);
+        if (detallesDiv) {
+            detallesDiv.classList.remove('hidden');
         }
     }
 
     document.getElementById('reservaForm').addEventListener('submit', function(e) {
-        const metodoSeleccionado = document.querySelector('input[name="metodo_pago"]:checked').value;
+        const metodoSeleccionado = document.querySelector('input[name="metodo_pago"]:checked');
+        if (!metodoSeleccionado) {
+            e.preventDefault();
+            alert('Debe seleccionar un método de pago');
+            return false;
+        }
+        
+        const metodo = metodoSeleccionado.value;
         const metodosConComprobante = ['Pago Móvil', 'Zelle'];
         
-        if (metodosConComprobante.includes(metodoSeleccionado)) {
-            const fileInput = document.querySelector(`input[name="comprobante_${metodoSeleccionado.replace(' ', '_')}"]`);
+        if (metodosConComprobante.includes(metodo)) {
+            const fileInput = document.querySelector(`input[name="comprobante_${metodo.replace(' ', '_')}"]`);
             if (!fileInput || fileInput.files.length === 0) {
                 e.preventDefault();
                 alert('Debe subir un comprobante de pago para el método seleccionado');
                 return false;
             }
         }
+        
+        // Deshabilitar botón para evitar múltiples envíos
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = 'Procesando...';
+        
         return true;
     });
+
+    // Seleccionar primer método al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+        const primerMetodo = document.querySelector('.metodo-pago-option');
+        if (primerMetodo) {
+            const metodo = primerMetodo.querySelector('input').value;
+            selectMetodoPago(metodo);
+        }
+    });
 </script>
+
+<style>
+    .metodo-pago-option {
+        transition: all 0.3s ease;
+    }
+    .metodo-pago-option:hover {
+        background-color: #f0f9ff;
+    }
+    .instrucciones-pago {
+        background-color: #f8fafc;
+        border-left: 3px solid #3b82f6;
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    [id^="detalles_"] {
+        transition: all 0.3s ease;
+    }
+</style>
 {% endblock %}

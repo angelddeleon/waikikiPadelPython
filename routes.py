@@ -371,16 +371,21 @@ def metodospago():
                 "banco": "Banco de Venezuela",
                 "cedula": "12345678",
                 "telefono": "04141234567",
-                "descripcion": "Realiza el pago móvil a nuestro número y sube el comprobante"
+                "titular": "Nombre del Titular",
+                "descripcion": "Realiza el pago móvil a nuestro número y sube el comprobante",
             },
             "Zelle": {
                 "requiere_comprobante": True,
                 "correo": "pagos@waikikipadel.com",
-                "descripcion": "Envía el pago a nuestro correo y sube el comprobante"
+                "banco": "Bank of America",
+                "titular": "Nombre del Titular",
+                "descripcion": "Envía el pago a nuestro correo y sube el comprobante",
+
             },
             "Efectivo": {
                 "requiere_comprobante": False,
-                "descripcion": "Paga directamente en caja al llegar al establecimiento"
+                "descripcion": "Paga directamente en caja al llegar al establecimiento",
+                "instrucciones": "1. Presenta tu número de reserva\n2. Realiza el pago en efectivo\n3. Recibe tu comprobante"
             }
         }
 

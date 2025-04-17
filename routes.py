@@ -325,6 +325,18 @@ def reservar():
         flash('Ocurrió un error al cargar la página de reserva', 'error')
         return redirect(url_for('client.principal'))
 
+
+# Configuración para subir archivos
+UPLOAD_FOLDER = 'uploads/comprobante'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+
+# Asegúrate de que la carpeta de uploads exista
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @client_bp.route('/metodospago')
 @login_required
 def metodospago():
@@ -339,11 +351,8 @@ def metodospago():
             return redirect(url_for('client.principal'))
 
         cancha = Cancha.query.get_or_404(cancha_id)
-
-        # Filtrar horarios vacíos
         horarios = [h for h in horarios if h]
         
-        # Formatear horarios para mostrar (formato 12 horas)
         horarios_formateados = []
         for hora in horarios:
             hora_inicio = datetime.strptime(hora, '%H:%M:%S').time()
@@ -356,7 +365,6 @@ def metodospago():
                 'fin': hora_fin.strftime('%I:%M %p').lstrip('0').lower()
             })
 
-        # Métodos de pago disponibles con información detallada
         metodos_pago = {
             "Pago Móvil": {
                 "requiere_comprobante": True,
@@ -388,58 +396,49 @@ def metodospago():
         flash('Ocurrió un error al procesar el pago', 'error')
         return redirect(url_for('client.principal'))
 
-# Configuración para subir archivos
-UPLOAD_FOLDER = 'uploads/comprobante'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
-
-# Asegúrate de que la carpeta de uploads exista
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 @client_bp.route('/procesar_reserva', methods=['POST'])
 @login_required
 def procesar_reserva():
     try:
-        # Obtener datos del formulario
+        # Obtener datos básicos
         cancha_id = request.form.get('cancha_id')
         fecha = request.form.get('fecha')
         horarios = request.form.get('horarios').split(',')
         metodo_pago = request.form.get('metodo_pago')
         monto_total = float(request.form.get('monto_total'))
 
-        # Validar datos requeridos
+        # Validaciones básicas
         if not all([cancha_id, fecha, horarios, metodo_pago]):
             flash('Faltan datos requeridos para la reserva', 'error')
             return redirect(request.referrer)
 
-        # Verificar si el método de pago requiere comprobante
-        metodos_con_comprobante = ['Pago Móvil', 'Zelle']
-        requiere_comprobante = metodo_pago in metodos_con_comprobante
-
-        # Procesar comprobante de pago si es requerido
+        # Procesar comprobante según método seleccionado
         comprobante = None
-        if requiere_comprobante:
-            if 'comprobante' not in request.files:
-                flash('Debe subir un comprobante de pago para este método', 'error')
+        metodos_con_comprobante = ['Pago Móvil', 'Zelle']
+        
+        if metodo_pago in metodos_con_comprobante:
+            campo_comprobante = f'comprobante_{metodo_pago.replace(" ", "_")}'
+            
+            if campo_comprobante not in request.files:
+                flash('Debe subir un comprobante de pago', 'error')
                 return redirect(request.referrer)
             
-            file = request.files['comprobante']
+            file = request.files[campo_comprobante]
+            
             if file.filename == '':
                 flash('No se seleccionó ningún archivo', 'error')
                 return redirect(request.referrer)
             
-            if file and allowed_file(file.filename):
-                # Generar un nombre único para el archivo
-                filename = secure_filename(f"{current_user.id}_{datetime.now().timestamp()}.{file.filename.rsplit('.', 1)[1].lower()}")
-                filepath = os.path.join(UPLOAD_FOLDER, filename)
-                file.save(filepath)
-                comprobante = filename
-            else:
+            if not allowed_file(file.filename):
                 flash('Formato de archivo no permitido. Use imágenes (PNG, JPG, JPEG, GIF) o PDF', 'error')
                 return redirect(request.referrer)
+            
+            # Guardar archivo
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = secure_filename(f"{current_user.id}_{datetime.now().timestamp()}.{ext}")
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(filepath)
+            comprobante = filename
 
         # Crear registro de pago
         pago = Pago(
@@ -462,7 +461,6 @@ def procesar_reserva():
             hora_inicio = datetime.strptime(hora, '%H:%M:%S').time()
             hora_fin = (datetime.combine(datetime.min, hora_inicio) + timedelta(hours=1)).time()
 
-            # Registrar horario
             horario = Horario(
                 cancha_id=cancha_id,
                 date=datetime.strptime(fecha, '%Y-%m-%d').date(),
@@ -473,7 +471,6 @@ def procesar_reserva():
             db.session.add(horario)
             db.session.flush()
 
-            # Crear reservación
             reservacion = Reservacion(
                 user_id=current_user.id,
                 horario_id=horario.id,

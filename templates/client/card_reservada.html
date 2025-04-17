@@ -3,14 +3,16 @@
     <div class="flex justify-between items-center">
         <h3 class="text-xl font-bold">{{ reserva.cancha_name }}</h3>
         <p class="text-sm 
-            {% if reserva.status == 'pendiente' %}bg-yellow-500
-            {% elif reserva.status == 'confirmada' %}bg-green-800
-            {% else %}bg-red-800{% endif %} 
-            text-white rounded p-2">
-            {% if reserva.status == 'pendiente' %}Pendiente
-            {% elif reserva.status == 'confirmada' %}Confirmada
-            {% else %}Cancelada{% endif %}
-        </p>
+        {% if reserva.status == 'pendiente' %}bg-yellow-500
+        {% elif reserva.status == 'confirmada' %}bg-blue-800
+        {% elif reserva.status == 'terminada' %}bg-green-800
+        {% elif reserva.status == 'cancelada' %}bg-red-800{% endif %} 
+        text-white rounded p-2">
+        {% if reserva.status == 'pendiente' %}Pendiente
+        {% elif reserva.status == 'confirmada' %}Confirmada
+        {% elif reserva.status == 'terminada' %}Terminada
+        {% elif reserva.status == 'cancelada' %}Cancelada{% endif %}
+    </p>
     </div>
 
     <!-- Date -->

@@ -228,23 +228,33 @@ def principal():
     except Exception as e:
         return render_template('client/principal.html', error=str(e))
 
-# Ruta para mis reservas
-@client_bp.route('/mis_reservas')
+@client_bp.route('/mis_reservas', methods=['GET'])
 @login_required
 def mis_reservas():
-    reservas = Reservacion.query.filter_by(user_id=current_user.id).all()
+    try:
+        # Obtener las reservas del usuario
+        reservas = Reservacion.query.join(Horario).filter(
+            Reservacion.user_id == current_user.id
+        ).order_by(Horario.date, Horario.start_time).all()
 
-    formatted_reservas = []
-    for reserva in reservas:
-        formatted_reservas.append({
-            'id': reserva.id,
-            'cancha_name': reserva.horario.cancha.name,
-            'fecha_reserva': reserva.horario.date.strftime('%Y-%m-%d'),
-            'start_time': format_time(reserva.horario.start_time),
-            'end_time': format_time(reserva.horario.end_time)
-        })
+        # Formatear las reservas
+        formatted_reservas = []
+        for reserva in reservas:
+            formatted_reservas.append({
+                'id': reserva.id,
+                'cancha_name': reserva.horario.cancha.name,
+                'status': reserva.status,
+                'fecha_reserva': reserva.horario.date.strftime('%Y-%m-%d'),
+                'start_time': format_time(reserva.horario.start_time),
+                'end_time': format_time(reserva.horario.end_time)
+            })
 
-    return render_template('client/mis_reservas.html', reservas=formatted_reservas)
+        # Renderizar la plantilla mis_reservas.html
+        return render_template('client/mis_reservas.html', reservas=formatted_reservas)
+
+    except Exception as e:
+        return render_template('client/mis_reservas.html', error=str(e))
+
 
 @client_bp.route('/reservar', methods=['GET', 'POST'])
 @login_required
@@ -442,3 +452,27 @@ def procesar_reserva():
 def perfil():
     return render_template('client/perfil.html')
 
+@client_bp.route('/canchas', methods=['GET'])
+@login_required
+def canchas():
+    try:
+        # Obtener todas las canchas
+        canchas = Cancha.query.all()
+        canchas_con_horarios = []
+
+        # Para cada cancha, obtener los horarios disponibles
+        for cancha in canchas:
+            horarios_disponibles = obtener_horas_disponibles(cancha.id, get_current_date().strftime('%Y-%m-%d'))
+
+            # Si no hay horarios disponibles para la cancha, no la mostramos
+            if horarios_disponibles:
+                canchas_con_horarios.append({
+                    'cancha': cancha,
+                    'horarios': horarios_disponibles
+                })
+
+        # Renderizar la plantilla canchas.html
+        return render_template('client/canchas.html', canchas=canchas_con_horarios)
+
+    except Exception as e:
+        return render_template('client/canchas.html', error=str(e))

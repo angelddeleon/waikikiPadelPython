@@ -1,0 +1,37 @@
+{% extends "client/base.html" %}
+
+{% block content %}
+<div class="px-4">
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-6">
+                {% for category, message in messages %}
+                    <div class="p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Mis Reservas Section -->
+    <div class="py-4">
+        <h1 class="text-2xl md:text-3xl font-bold text-blue-950 mb-4">Mis Reservas</h1>
+
+        {% if error %}
+            <p class="text-center text-red-500">Error: {{ error }}</p>
+        {% else %}
+            <!-- Grid for Reservations -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+                {% for reserva in reservas %}
+                    <div class="flex justify-center">
+                        <!-- Include the card for each reservation -->
+                        {% include 'client/card_reservada.html' %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
